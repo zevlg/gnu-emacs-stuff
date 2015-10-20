@@ -1,4 +1,4 @@
-;; init.el --- Custom configuration for SXEmacs.
+;; init.el --- Custom configuration for GNU Emacs.
 ;;
 ;; Copyright (C) 2015 by Zajcev Evgeny.
 ;;
