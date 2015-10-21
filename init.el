@@ -182,6 +182,18 @@ If prefix ARG is specified, switch in other window."
 ;; To join two lines (aka vi's J)
 (define-key global-map (kbd "C-^") (kbd "C-u M-^"))
 
+(define-key global-map (kbd "C-l") 'recenter)
+
+;;; For quick region commenting
+(define-key global-map (kbd "C-c C-c") 'comment-region)
+(define-key global-map (kbd "C-c ;") 'comment-region)
+
+(defun lg-activate-region ()
+  "Activate previously active region."
+  (interactive)
+  (activate-mark))
+(define-key global-map (kbd "C-M-z") 'lg-activate-region)
+
 ;;}}}
 
 ;;{{{ `-- Mini calculator
@@ -640,3 +652,5 @@ If prefix ARG is specified, then replace region with the evaluation result."
   (save-place-kill-emacs-hook))
 
 ;;
+(icomplete-mode)
+(setq icomplete-compute-delay 0.15)
