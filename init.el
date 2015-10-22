@@ -2,6 +2,13 @@
 ;;
 ;; Copyright (C) 2015 by Zajcev Evgeny.
 ;;
+
+;;(require 'package)
+;;(add-to-list 'package-archives
+;;             '("elpy" . "https://jorgenschaefer.github.io/packages/"))
+
+(package-initialize)
+
 (push "~/.emacs.d/thirdparty" load-path)
 (load-library "xemacs-theme-source-code")
 
@@ -193,6 +200,15 @@ If prefix ARG is specified, switch in other window."
   (interactive)
   (activate-mark))
 (define-key global-map (kbd "C-M-z") 'lg-activate-region)
+
+(defun lg-mark-eof ()
+  (interactive)
+  (set-mark (point-max)))
+(defun lg-mark-bof ()
+  (interactive)
+  (set-mark (point-min)))
+(define-key global-map (kbd "C->") 'lg-mark-eof)
+(define-key global-map (kbd "C-<") 'lg-mark-bof)
 
 ;;}}}
 
@@ -479,7 +495,6 @@ truncate-lines
 					       (apply #'insert args))) ; XXX hack to make M-( work in slime's REPL
 		   (skeleton-insert
 		    (cons nil (cdddr pair))))))))))
-;                     (make-list (prefix-numeric-value arg) 'not-used)))))))
 
 (define-key global-map (kbd "C-M-{") 'backward-paragraph)
 (define-key global-map (kbd "C-M-}") 'forward-paragraph)
@@ -638,6 +653,21 @@ If prefix ARG is specified, then replace region with the evaluation result."
 
 (push "~/.emacs.d/python-mode" load-path)
 (require 'python-mode)
+
+(setq elpy-modules '(elpy-module-sane-defaults
+		     elpy-module-company
+		     elpy-module-eldoc
+		     elpy-module-flymake
+		     elpy-module-pyvenv))
+(elpy-enable)
+
+(defcustom elpy-modules '(elpy-module-sane-defaults
+                          elpy-module-company
+                          elpy-module-eldoc
+                          elpy-module-flymake
+                          elpy-module-highlight-indentation
+                          elpy-module-pyvenv
+                          elpy-module-yasnippet)
 
 ;;}}}
 
