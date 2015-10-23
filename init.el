@@ -13,8 +13,14 @@
 (push "~/dev/gnu-emacs-stuff" load-path)
 (load-library "xemacs-theme-source-code")
 
+;;
+(set-face-font
+ 'default "-xos4-terminus-medium-r-normal--32-320-72-72-c-160-koi8-r")
+
 (setq inhibit-splash-screen t)
 (setq enable-recursive-minibuffers t)
+
+(set-default 'indent-tabs-mode nil)
 
 (menu-bar-mode -1)
 (tool-bar-mode -1)
@@ -60,7 +66,6 @@ bottom of the buffer stack."
 ;;; Use cool `ibuffer' instead of ugly `list-buffers'
 (define-key global-map (kbd "C-x C-b") 'ibuffer)
 
-
 (setq mouse-yank-at-point t)
 
 (defun lg-mouse-yank ()
@@ -72,14 +77,14 @@ bottom of the buffer stack."
 (defun lg-show-paren-surround ()
   (let ((pdflt (show-paren--default)))
     (or pdflt
-	(let ((pnt (save-excursion
-		     (condition-case nil
-			 (cons (progn (up-list -1) (point))
-			       (or (scan-lists (point) 1 0)
-				   (buffer-end 1)))
-		       (error nil)))))
-	  (when (and pnt (> (cdr pnt) (car pnt)))
-	    (list (car pnt) (cdr pnt) nil nil nil))))))
+        (let ((pnt (save-excursion
+                     (condition-case nil
+                         (cons (progn (up-list -1) (point))
+                               (or (scan-lists (point) 1 0)
+                                   (buffer-end 1)))
+                       (error nil)))))
+          (when (and pnt (> (cdr pnt) (car pnt)))
+            (list (car pnt) (cdr pnt) nil nil nil))))))
 
 (setq show-paren-data-function #'lg-show-paren-surround)
 
@@ -137,6 +142,15 @@ If ARG is non-nil delete region, otherwise kill."
 (define-key global-map (kbd "M-<f4>") 'lg-kill-current-buffer)
 (define-key global-map (kbd "C-x k") 'lg-kill-current-buffer)
 
+;;{{{ `-- Whitespace
+
+(require 'whitespace)
+(set-face-background 'whitespace-tab "yellow")
+(set-face-background 'whitespace-space "LightBlue1")
+(set-face-background 'whitespace-indentation "skyblue")
+
+;;}}}
+
 ;;{{{ `-- Useful interactive functions
 
 ;;; Some useful functions
@@ -168,10 +182,10 @@ With negative ARG turn it off, with positive turn it on.
 Otherwise toggle."
   (interactive "P")
   (setq debug-on-error
-	(or (and (null arg)
-		 (not debug-on-error))
-	    (and (not (null arg))
-		 (> (prefix-numeric-value arg) 0))))
+        (or (and (null arg)
+                 (not debug-on-error))
+            (and (not (null arg))
+                 (> (prefix-numeric-value arg) 0))))
   (message "Debug on error is %s" (if debug-on-error "ON" "OFF")))
 
 (defvar lg-scratch-file (expand-file-name "~/.sxemacs/*scratch-file*"))
@@ -182,7 +196,7 @@ If prefix ARG is specified, switch in other window."
   (interactive "P")
   (let ((scbuf (find-file lg-scratch-file)))
     (if arg
-	(switch-to-buffer-other-window scbuf)
+        (switch-to-buffer-other-window scbuf)
       (switch-to-buffer scbuf))))
 
 (define-key global-map (kbd "M-<f3>") 'lg-switch-to-scratch)
@@ -228,11 +242,11 @@ If prefix ARG is specified, switch in other window."
 If ARG is given, then insert the result to current-buffer"
   (interactive
    (list (read-from-minibuffer "Enter expression: ")
-	 current-prefix-arg))
+         current-prefix-arg))
 
   (let ((result (calc-eval expr)))
     (if arg
-	(insert result)
+        (insert result)
       (message "Result: [%s] = %s" expr result))))
 (global-set-key (kbd "M-#") 'lg-mini-calc)
 
@@ -244,13 +258,13 @@ CSTR can contain special escape sequences:
  ~n  - for value of the register n"
   (interactive "cCalc for register: \nsCalc string: ")
   (let* ((ss (split-string cstr "~"))
-	 (es (concat (car ss)
-		     (mapconcat #'(lambda (s)
-				    (let* ((c (aref s 0))
-					   (cv (get-register (if (= c ?_) r c)))
-					   (os (substring s 1)))
-				      (format "%s %s" cv os)))
-				(cdr ss) ""))))
+         (es (concat (car ss)
+                     (mapconcat #'(lambda (s)
+                                    (let* ((c (aref s 0))
+                                           (cv (get-register (if (= c ?_) r c)))
+                                           (os (substring s 1)))
+                                      (format "%s %s" cv os)))
+                                (cdr ss) ""))))
     (set-register r (string-to-int (calc-eval es)))
     (message "Register %c set to: %s" r (get-register r))))
 
@@ -275,9 +289,9 @@ CSTR can contain special escape sequences:
 (line-number-mode 1)
 (column-number-mode 1)
 
-(size-indication-mode 0)		;file size
-truncate-lines
+(size-indication-mode 0)                ;file size
 (toggle-truncate-lines 1)
+(display-time-mode 1)
 
 (setq line-number-mode t)
 (setq column-number-mode t)
@@ -444,7 +458,8 @@ truncate-lines
 ; )
 
 ;;{{{ `-- Pair skeleton
-(setq skeleton-end-newline nil)		;do not insert newline after skeleton insertation
+;; do not insert newline after skeleton insertation
+(setq skeleton-end-newline nil)
 
 (defvar lg-skeleton-pairs
   '((?\" . (?\" ?\" ?\" _ ?\"))
@@ -466,43 +481,46 @@ truncate-lines
   (interactive "*P")
 
   (let* ((chr (logand last-command-event ?\177))
-	 (pair (assoc chr lg-skeleton-pairs)))
+         (pair (assoc chr lg-skeleton-pairs)))
     (if (null pair)
-	(message "Character `%c' is not in `lg-skeleton-pairs'." chr)
+        (message "Character `%c' is not in `lg-skeleton-pairs'." chr)
       (cond ((and (listp arg) (not (null arg)))
-	     ;; Surround current word with
-	     (let ((sse (mapcar (lambda (c)
-				  (cons c (char-syntax c)))
-				(mapcar 'car lg-skeleton-pair-char-syntaxes))))
-	       ;; Modify character syntax table entries
-	       (mapc (lambda (cse)
-		       (modify-syntax-entry (car cse) (char-to-string (cdr cse))))
-		     lg-skeleton-pair-char-syntaxes)
+             ;; Surround current word with
+             (let ((sse (mapcar (lambda (c)
+                                  (cons c (char-syntax c)))
+                                (mapcar 'car lg-skeleton-pair-char-syntaxes))))
+               ;; Modify character syntax table entries
+               (mapc (lambda (cse)
+                       (modify-syntax-entry
+                        (car cse) (char-to-string (cdr cse))))
+                     lg-skeleton-pair-char-syntaxes)
 
-	       (save-excursion
-		 (unless (looking-at "\\<")
-		   (backward-word 1))
-		 (when (looking-at "\\sw")
-		   (let ((pl 0)
-			 (r (prefix-numeric-value arg)))
-		     (while (> r 1)
-		       (setq r (/ r 4))
-		       (setq pl (1+ pl)))
+               (save-excursion
+                 (unless (looking-at "\\<")
+                   (backward-word 1))
+                 (when (looking-at "\\sw")
+                   (let ((pl 0)
+                         (r (prefix-numeric-value arg)))
+                     (while (> r 1)
+                       (setq r (/ r 4))
+                       (setq pl (1+ pl)))
 
-		     (insert (make-string pl (nth 0 (cdr pair))))
-		     (forward-word 1)
-		     (insert (make-string pl (nth 1 (cdr pair)))))))
+                     (insert (make-string pl (nth 0 (cdr pair))))
+                     (forward-word 1)
+                     (insert (make-string pl (nth 1 (cdr pair)))))))
 
-	       ;; Restore character syntax table entries
-	       (mapc (lambda (cse)
-		       (modify-syntax-entry (car cse) (char-to-string (cdr cse))))
-		     sse)))
+               ;; Restore character syntax table entries
+               (mapc (lambda (cse)
+                       (modify-syntax-entry
+                        (car cse) (char-to-string (cdr cse))))
+                     sse)))
 
-	    (t (dotimes (not-used (prefix-numeric-value arg))
-		 (flet ((insert-before-markers (&rest args)
-					       (apply #'insert args))) ; XXX hack to make M-( work in slime's REPL
-		   (skeleton-insert
-		    (cons nil (cdddr pair))))))))))
+            (t (dotimes (not-used (prefix-numeric-value arg))
+                 ;; XXX hack to make M-( work in slime's REPL
+                 (flet ((insert-before-markers (&rest args)
+                                               (apply #'insert args)))
+                   (skeleton-insert
+                    (cons nil (cdddr pair))))))))))
 
 (define-key global-map (kbd "C-M-{") 'backward-paragraph)
 (define-key global-map (kbd "C-M-}") 'forward-paragraph)
@@ -573,8 +591,8 @@ truncate-lines
   (interactive "p")
   (if (region-active-p)
       (dotimes (i n)
-	(lg-dot-mode-apply-to-region-lines
-	 (region-beginning) (region-end)))
+        (lg-dot-mode-apply-to-region-lines
+         (region-beginning) (region-end)))
     (dotimes (i n)
       (dot-mode-execute))))
 
@@ -599,20 +617,20 @@ If prefix ARG is specified, then replace region with the evaluation result."
   (save-excursion
     (let ((res ""))
       (eval-region start end
-		   (lambda (chr)
-		     (setq res (concat res (char-to-string chr)))))
+                   (lambda (chr)
+                     (setq res (concat res (char-to-string chr)))))
       ;; GNU Emacs keeps region active after evaluation, so force
       ;; deactivation
       (deactivate-mark)
 
       ;; Fixate RES
       (when (> (length res) 1)
-	(setq res (substring res 1 (1- (length res)))))
+        (setq res (substring res 1 (1- (length res)))))
       ;; Display or insert RES
       (if (null arg)
-	  (message "Region(%d %d) => %s" start end res)
-	(delete-region start end)
-	(insert res)))))
+          (message "Region(%d %d) => %s" start end res)
+        (delete-region start end)
+        (insert res)))))
 
 ;; NOTE: Installs C-ce Prefix for elisp operations (for lisp-mode only)
 (define-key emacs-lisp-mode-map (kbd "C-c e b") 'lg-emacs-eval-buffer)
@@ -654,6 +672,26 @@ If prefix ARG is specified, then replace region with the evaluation result."
 (define-key global-map (kbd "C-c r g") 'igrep)
 (define-key global-map (kbd "C-c r o") 'occur)
 
+;; C-cm Prefix for MISC commands
+(define-key global-map (kbd "C-c m c") 'lg-mini-calc)
+(define-key global-map (kbd "C-c m f") 'folding-mode)
+(define-key global-map (kbd "C-c m a") 'ascii-display)
+(define-key global-map (kbd "C-c m g") 'imenu)
+(define-key global-map (kbd "C-c m o") 'occur)
+(define-key global-map (kbd "C-c m |") 'vertical-mode)
+(define-key global-map (kbd "C-c m v") 'vvb-mode)
+(define-key global-map (kbd "C-c m h") 'highline-mode)
+(define-key global-map (kbd "C-c m w") 'whitespace-mode)
+(define-key global-map (kbd "C-c m F") 'flyspell-mode)
+(define-key global-map (kbd "C-c m i") 'flyspell-mode)
+(define-key global-map (kbd "C-c m m") 'himarks-mode)
+(define-key global-map (kbd "C-c m s") 'stripes-mode)
+(define-key global-map (kbd "C-c m l") 'lg-column-ruler)
+(define-key global-map (kbd "C-c m d") 'dot-mode)
+(define-key global-map (kbd "C-c m r") 'rst-mode)
+(define-key global-map (kbd "C-c m <RET>") 'hide-cr-mode)
+(define-key global-map (kbd "C-c m p") 'pabbrev-mode)
+
 ;;}}}
 
 ;;{{{ `-- Python
@@ -664,19 +702,19 @@ If prefix ARG is specified, then replace region with the evaluation result."
 (require 'python-mode)
 
 (setq elpy-modules '(elpy-module-sane-defaults
-		     elpy-module-company
-		     elpy-module-eldoc
-		     elpy-module-flymake
-		     elpy-module-pyvenv))
+                     elpy-module-company
+                     elpy-module-eldoc
+                     elpy-module-flymake
+                     elpy-module-pyvenv))
 (elpy-enable)
 
 (setq elpy-modules '(elpy-module-sane-defaults
-		     elpy-module-company
-		     elpy-module-eldoc
-		     elpy-module-flymake
-		     elpy-module-highlight-indentation
-		     elpy-module-pyvenv
-		     elpy-module-yasnippet))
+                     elpy-module-company
+                     elpy-module-eldoc
+                     elpy-module-flymake
+                     elpy-module-highlight-indentation
+                     elpy-module-pyvenv
+                     elpy-module-yasnippet))
 
 ;;}}}
 
@@ -695,7 +733,7 @@ If prefix ARG is specified, then replace region with the evaluation result."
 (setq icomplete-compute-delay 0.15)
 
 ;;; Sudoku
-;; 
+;;
 (autoload 'sudoku "sudoku" "Start playing sudoku." t)
 
 (setq sudoku-level 'evil)
@@ -704,3 +742,6 @@ If prefix ARG is specified, then replace region with the evaluation result."
 ;; Enable autoinserter
 (setq sudoku-autoinsert-mode t)
 (add-hook 'sudoku-after-change-hook 'sudoku-autoinsert)
+
+;;; Version control
+(setq vc-follow-symlinks t)
