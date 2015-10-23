@@ -10,8 +10,10 @@
 (package-initialize)
 
 (push "~/.emacs.d/thirdparty" load-path)
+(push "~/dev/gnu-emacs-stuff" load-path)
 (load-library "xemacs-theme-source-code")
 
+(setq inhibit-splash-screen t)
 (setq enable-recursive-minibuffers t)
 
 (menu-bar-mode -1)
@@ -46,8 +48,9 @@ bottom of the buffer stack."
 (setq ido-max-window-height 1)
 (ido-mode 1)
 
-;; git clone http://www.dr-qubit.org/git/undo-tree.git
-(push "~/.emacs.d/undo-tree" load-path)
+;; M-x package-install RET undo-tree RET
+;;; git clone http://www.dr-qubit.org/git/undo-tree.git
+;;(push "~/.emacs.d/undo-tree" load-path)
 (autoload 'undo-tree-undo "undo-tree" "Undo from redo package." t)
 (autoload 'undo-tree-redo "undo-tree" "Redo from redo package." t)
 
@@ -279,6 +282,9 @@ truncate-lines
 (setq line-number-mode t)
 (setq column-number-mode t)
 
+(set-face-background 'mode-line "#c0bf8d")
+(set-face-attribute 'mode-line nil :height 0.4)
+
 ;;}}}
 
 ;;{{{   `-- C-cf - Prefix for Finding commands
@@ -287,6 +293,7 @@ truncate-lines
 
 ;; C-cf Prefix for FIND functions
 (define-key global-map (kbd "C-c f f") 'find-function)
+(define-key global-map (kbd "C-c f F") 'find-face-definition)
 (define-key global-map (kbd "C-c f v") 'find-variable)
 (define-key global-map (kbd "C-c f l") 'find-library)
 (define-key global-map (kbd "C-c f k") 'find-function-on-key) ;; equivalent to C-x K
@@ -300,10 +307,11 @@ truncate-lines
 ;;{{{ `-- ELIM
 
 ;; for prpl-mra
-(add-to-list 'load-path "~/.emacs.d/elim/elisp")
-(load-library "garak")
+(ignore-errors
+  (add-to-list 'load-path "~/.emacs.d/elim/elisp")
+  (load-library "garak")
 
-(tracking-mode 1)
+  (tracking-mode 1))
 
 ;;}}}
 
@@ -430,10 +438,10 @@ truncate-lines
 "\xEF\xFF\xFF\xFF\xFF\xFF\xFF\xFF"
 ))
 
-(set-face-background-pixmap
- 'default
- (list 64 64 lg-square-64x64-xpm)
- )
+;(set-face-background-pixmap
+; 'default nil)
+; (list 64 64 lg-square-64x64-xpm)
+; )
 
 ;;{{{ `-- Pair skeleton
 (setq skeleton-end-newline nil)		;do not insert newline after skeleton insertation
@@ -535,6 +543,7 @@ truncate-lines
 ;;}}}
 
 ;;{{{ `-- Dot-mode
+;; http://www.emacswiki.org/emacs/download/dot-mode.el
 (require 'dot-mode)
 (add-hook 'find-file-hooks 'dot-mode-on)
 
@@ -661,13 +670,13 @@ If prefix ARG is specified, then replace region with the evaluation result."
 		     elpy-module-pyvenv))
 (elpy-enable)
 
-(defcustom elpy-modules '(elpy-module-sane-defaults
-                          elpy-module-company
-                          elpy-module-eldoc
-                          elpy-module-flymake
-                          elpy-module-highlight-indentation
-                          elpy-module-pyvenv
-                          elpy-module-yasnippet)
+(setq elpy-modules '(elpy-module-sane-defaults
+		     elpy-module-company
+		     elpy-module-eldoc
+		     elpy-module-flymake
+		     elpy-module-highlight-indentation
+		     elpy-module-pyvenv
+		     elpy-module-yasnippet))
 
 ;;}}}
 
@@ -684,3 +693,14 @@ If prefix ARG is specified, then replace region with the evaluation result."
 ;;
 (icomplete-mode)
 (setq icomplete-compute-delay 0.15)
+
+;;; Sudoku
+;; 
+(autoload 'sudoku "sudoku" "Start playing sudoku." t)
+
+(setq sudoku-level 'evil)
+(setq sudoku-download nil)
+
+;; Enable autoinserter
+(setq sudoku-autoinsert-mode t)
+(add-hook 'sudoku-after-change-hook 'sudoku-autoinsert)
