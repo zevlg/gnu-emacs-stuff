@@ -26,6 +26,8 @@
 (tool-bar-mode -1)
 (put 'set-goal-column 'disabled nil)
 
+(setq default-scroll-bar-width 6)
+
 (mouse-avoidance-mode 'none)
 (blink-cursor-mode 0)
 (set-cursor-color "red3")
