@@ -1845,7 +1845,7 @@ And append them into built-in puzzles table."
   "Convert flat numbers list NL to sudoku board."
   (setq nl (mapcar #'(lambda (c) (- c 48)) (string-to-list nl)))
   (loop for v on nl by #'(lambda (l) (nthcdr 9 l))
-    collect (subseq v 0 9)))
+    collect (cl-subseq v 0 9)))
 
 (defun sudoku-board-to-string (brd)
   "Convert board BRD to string."
