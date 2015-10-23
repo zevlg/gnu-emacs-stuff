@@ -8,6 +8,7 @@
 ;;             '("elpy" . "https://jorgenschaefer.github.io/packages/"))
 
 (package-initialize)
+(server-start)
 
 (push "~/.emacs.d/thirdparty" load-path)
 (push "~/dev/gnu-emacs-stuff" load-path)
@@ -205,6 +206,16 @@ If prefix ARG is specified, switch in other window."
 (define-key global-map (kbd "C-<f3>") 'lg-switch-to-scratch)
 (define-key global-map (kbd "C-c C-s") 'lg-switch-to-scratch)
 
+(defun lg-insert-nl-at-eol (arg)
+  "Insert new line at the end of line.
+If prefix ARG is supplied, do not move point."
+  (interactive "P")
+  (eval (list (if arg 'save-excursion 'progn)
+              '(end-of-line)
+              '(newline-and-indent))))
+
+(define-key global-map (kbd "C-j") 'lg-insert-nl-at-eol)
+
 ;; To join two lines (aka vi's J)
 (define-key global-map (kbd "C-^") (kbd "C-u M-^"))
 
@@ -293,6 +304,10 @@ CSTR can contain special escape sequences:
 
 (size-indication-mode 0)                ;file size
 (toggle-truncate-lines 1)
+
+(setq display-time-default-load-average nil)
+(setq display-time-24hr-format t)
+(setq display-time-day-and-date t)
 (display-time-mode 1)
 
 (setq line-number-mode t)
@@ -718,6 +733,19 @@ If prefix ARG is specified, then replace region with the evaluation result."
                      elpy-module-pyvenv
                      elpy-module-yasnippet))
 
+(defun lg-py-install-keys ()
+  (local-set-key (kbd "C-c e r") 'py-execute-region)
+  (local-set-key (kbd "C-c e b") 'py-execute-buffer)
+  (local-set-key (kbd "C-c e f") 'py-execute-def-or-class)
+  (local-set-key (kbd "C-c e s") 'py-execute-string)
+  (local-set-key (kbd "C-c C-c") 'py-comment-region)
+  (local-set-key (kbd "C-j") 'lg-insert-nl-at-eol)
+  )
+
+(add-hook 'python-mode-hook 'lg-py-install-keys)
+
+;;; TODO: pyrex mode
+
 ;;}}}
 
 ;; Save places of visited files
@@ -747,3 +775,17 @@ If prefix ARG is specified, then replace region with the evaluation result."
 
 ;;; Version control
 (setq vc-follow-symlinks t)
+
+;;;;
+(custom-set-variables
+ ;; custom-set-variables was added by Custom.
+ ;; If you edit it by hand, you could mess it up, so be careful.
+ ;; Your init file should contain only one such instance.
+ ;; If there is more than one, they won't work right.
+ '(package-selected-packages (quote (undo-tree elpy))))
+(custom-set-faces
+ ;; custom-set-faces was added by Custom.
+ ;; If you edit it by hand, you could mess it up, so be careful.
+ ;; Your init file should contain only one such instance.
+ ;; If there is more than one, they won't work right.
+ )
