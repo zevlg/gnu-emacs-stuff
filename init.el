@@ -8,10 +8,11 @@
 ;;             '("elpy" . "https://jorgenschaefer.github.io/packages/"))
 
 (package-initialize)
-(server-start)
+;(server-start)
 
 (push "~/.emacs.d/thirdparty" load-path)
 (push "~/dev/gnu-emacs-stuff" load-path)
+(push "/usr/share/emacs24/site-lisp/git" load-path)
 (load-library "xemacs-theme-source-code")
 
 ;;
@@ -775,6 +776,78 @@ If prefix ARG is specified, then replace region with the evaluation result."
 
 ;;; Version control
 (setq vc-follow-symlinks t)
+
+;;{{{ `--Calendar
+
+(require 'calendar)
+(defalias 'cal 'calendar)
+(setq calendar-week-start-day 1)
+
+(set-face-attribute 'calendar-today nil :weight 'bold)
+(set-face-background 'holiday "DarkSeaGreen3")
+
+(add-hook 'calendar-today-visible-hook 'calendar-mark-today)
+(add-hook 'calendar-mode-hook 'calendar-mark-holidays)
+
+(setq lg-russian-holdays
+      '((holiday-fixed 1 1 "Новогодние каникулы")
+        (holiday-fixed 1 2 "Новогодние каникулы")
+        (holiday-fixed 1 3 "Новогодние каникулы")
+        (holiday-fixed 1 4 "Новогодние каникулы")
+        (holiday-fixed 1 5 "Новогодние каникулы")
+        (holiday-fixed 1 6 "Новогодние каникулы")
+        (holiday-fixed 1 7 "Рождество Христово")
+        (holiday-fixed 1 8 "Новогодние каникулы")
+        (holiday-fixed 2 23 "День защитника Отечества")
+        (holiday-fixed 3 8 "Международный женский день")
+        (holiday-fixed 5 1 "День Весны и Труда")
+        (holiday-fixed 5 9 "День Победы")
+        (holiday-fixed 6 12 "День России")
+        (holiday-fixed 11 4 "День народного единства")))
+
+(setq calendar-holidays lg-russian-holdays)
+
+(defface lg-weekend-face nil nil)
+(set-face-background 'lg-weekend-face "pink")
+
+(defun lg-visible-weekends-list ()
+  (let* ((m1 displayed-month)
+         (y1 displayed-year)
+         (m2 displayed-month)
+         (y2 displayed-year)
+         ;; Absolute date of first/last dates in calendar window.
+         (start-date (progn
+                       (calendar-increment-month m1 y1 -1)
+                       (calendar-absolute-from-gregorian (list m1 1 y1))))
+         (end-date (progn
+                     (calendar-increment-month m2 y2 1)
+                     (calendar-absolute-from-gregorian
+                      (list m2 (calendar-last-day-of-month m2 y2) y2)))))
+
+    (remove-if-not #'(lambda (x)
+                       (member (mod x 7) calendar-weekend-days))
+                   (number-sequence start-date end-date))))
+  ;; (let ((start-date (calendar-absolute-from-gregorian (list 1 1 displayed-year)))
+  ;;       (end-date (calendar-absolute-from-gregorian (list 12 31 displayed-year))))
+  ;;   (remove-if-not #'(lambda (x)
+  ;;                      (member (mod x 7) calendar-weekend-days))
+  ;;                  (number-sequence start-date end-date))))
+
+(defun lg-mark-weekends (&optional face)
+  "Mark all weekends with FACE"
+  (dolist (weekend (lg-visible-weekends-list))
+    (calendar-mark-visible-date
+     (calendar-gregorian-from-absolute weekend)
+     (or face 'lg-weekend-face))))
+
+(add-hook 'calendar-today-visible-hook 'lg-mark-weekends)
+(add-hook 'calendar-today-invisible-hook 'lg-mark-weekends)
+
+;;}}}
+
+;;; EXWM development
+(push "~/dev/exwm" load-path)
+(push "~/dev/xelb" load-path)
 
 ;;;;
 (custom-set-variables
