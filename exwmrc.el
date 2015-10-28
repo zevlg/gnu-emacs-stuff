@@ -3,6 +3,9 @@
 (push "~/dev/xelb" load-path)
 
 (require 'exwm)
+(require 'exwm-commands)
+(setq exwm-debug-on t)
+
 (exwm-input-set-key (kbd "H-r") 'exwm-reset)
 ;; Bind a key to switch workspace interactively
 ;;(exwm-input-set-key (kbd "H-w") 'exwm-workspace-switch)
@@ -15,10 +18,10 @@
 (add-hook 'exwm-update-class-hook 'lg-exwm-rename-buffer)
 (add-hook 'exwm-update-title-hook 'lg-exwm-rename-buffer)
 
-;; Always use char mode, NOTE: does not work
-(add-hook 'exwm-mode-hook 'exwm-input-release-keyboard)
+;; Always use char mode
+(add-hook 'exwm-manage-finish-hook 'exwm-input-release-keyboard)
 
-(setq exwm-workspace-number 1)
+(setq exwm-workspace-number 3)
 
 (exwm-input-set-key (kbd "H-C-0") 'exwm-workspace-switch-nth)
 (exwm-input-set-key (kbd "H-C-1") 'exwm-workspace-switch-nth)
@@ -29,13 +32,14 @@
                         (interactive)
                         (exwm-workspace-switch 0)))
 
-(exwm-input-set-key (kbd "H-.") 'next-buffer)
-(exwm-input-set-key (kbd "H-,") 'previous-buffer)
+(exwm-input-set-key (kbd "H-.") 'exwm-next-buffer)
+(exwm-input-set-key (kbd "H-,") 'exwm-previous-buffer)
 
 (exwm-input-set-key (kbd "H-C-l") 'switch-to-other-buffer)
 
 (exwm-input-set-key (kbd "H-x 1") 'delete-other-windows)
 (exwm-input-set-key (kbd "H-x 2") 'split-window-below)
+(exwm-input-set-key (kbd "H-x 0") 'delete-window)
 (exwm-input-set-key (kbd "H-x +") 'balance-windows)
 (exwm-input-set-key (kbd "H-n") 'other-window)
 (exwm-input-set-key (kbd "H-p") '(lambda (cnt) (interactive "p") (other-window (- cnt))))
