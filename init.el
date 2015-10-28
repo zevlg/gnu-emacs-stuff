@@ -22,6 +22,8 @@
 (setq inhibit-splash-screen t)
 (setq enable-recursive-minibuffers t)
 (setq select-enable-primary t)
+(setq apropos-do-all t)
+(define-key global-map (kbd "C-h a") #'apropos)
 
 (set-default 'indent-tabs-mode nil)
 
@@ -34,6 +36,9 @@
 (mouse-avoidance-mode 'none)
 (blink-cursor-mode 0)
 (set-cursor-color "red3")
+
+(tooltip-mode -1)
+(setq show-help-function nil)
 
 (setq dabbrev-ignored-buffer-names
       '(" *Message-Log*" "*Messages*" "*Buffer List*" "*Ibuffer*"))
@@ -500,7 +505,7 @@ CSTR can contain special escape sequences:
   "Inserts pairs."
   (interactive "*P")
 
-  (let* ((chr (logand last-command-event ?\177))
+  (let* ((chr (event-basic-type last-command-event))
          (pair (assoc chr lg-skeleton-pairs)))
     (if (null pair)
         (message "Character `%c' is not in `lg-skeleton-pairs'." chr)
@@ -728,14 +733,6 @@ If prefix ARG is specified, then replace region with the evaluation result."
                      elpy-module-pyvenv))
 (elpy-enable)
 
-(setq elpy-modules '(elpy-module-sane-defaults
-                     elpy-module-company
-                     elpy-module-eldoc
-                     elpy-module-flymake
-                     elpy-module-highlight-indentation
-                     elpy-module-pyvenv
-                     elpy-module-yasnippet))
-
 (defun lg-py-install-keys ()
   (local-set-key (kbd "C-c e r") 'py-execute-region)
   (local-set-key (kbd "C-c e b") 'py-execute-buffer)
@@ -844,6 +841,62 @@ If prefix ARG is specified, then replace region with the evaluation result."
 
 (add-hook 'calendar-today-visible-hook 'lg-mark-weekends)
 (add-hook 'calendar-today-invisible-hook 'lg-mark-weekends)
+
+;;}}}
+
+;;{{{ `-- Autoinsert
+(require 'autoinsert)
+(add-hook 'find-file-hook 'auto-insert)
+
+(push '(("\\.el\\'" . "Emacs Lisp header")
+        "Short description: "
+        ";;; " (file-name-nondirectory (buffer-file-name)) " --- " str "
+
+;; Copyright (C) "
+        (substring (current-time-string) -4)
+        " by Zajcev Evegny.
+
+;; Author: Zajcev Evgeny <zevlg@yandex.ru>
+;; Created: " (current-time-string) "
+;; Keywords: "
+        '(require 'finder)
+        ;;'(setq v1 (apply 'vector (mapcar 'car finder-known-keywords)))
+        '(setq v1 (mapcar (lambda (x) (list (symbol-name (car x))))
+                          finder-known-keywords)
+               v2 (mapconcat (lambda (x) (format "%10.0s:  %s" (car x) (cdr x)))
+                             finder-known-keywords
+                             "\n"))
+        ((let ((minibuffer-help-form v2))
+           (completing-read "Keyword, C-h: " v1 nil t))
+         str ", ") & -2 "
+
+;; This file is part of GNU Emacs.
+
+;; GNU Emacs is free software: you can redistribute it and/or modify
+;; it under the terms of the GNU General Public License as published by
+;; the Free Software Foundation, either version 3 of the License, or
+;; (at your option) any later version.
+
+;; GNU Emacs is distributed in the hope that it will be useful,
+;; but WITHOUT ANY WARRANTY; without even the implied warranty of
+;; MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+;; GNU General Public License for more details.
+
+;; You should have received a copy of the GNU General Public License
+;; along with GNU Emacs.  If not, see <http://www.gnu.org/licenses/>.
+
+;;; Commentary:
+
+;; " _ "
+
+;;; Code:
+
+(provide '" (file-name-sans-extension (file-name-nondirectory
+(buffer-file-name))) ")
+
+;;; " (file-name-nondirectory (buffer-file-name)) " ends here
+")
+auto-insert-alist)
 
 ;;}}}
 
