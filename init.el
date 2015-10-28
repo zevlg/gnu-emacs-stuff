@@ -21,6 +21,7 @@
 
 (setq inhibit-splash-screen t)
 (setq enable-recursive-minibuffers t)
+(setq select-enable-primary t)
 
 (set-default 'indent-tabs-mode nil)
 
@@ -296,6 +297,7 @@ CSTR can contain special escape sequences:
 ;;{{{ `-- Minibuffer
 
 (setq echo-keystrokes 0.1)
+(setq resize-mini-windows t)
 
 ;;}}}
 
@@ -845,9 +847,10 @@ If prefix ARG is specified, then replace region with the evaluation result."
 
 ;;}}}
 
-;;; EXWM development
-(push "~/dev/exwm" load-path)
-(push "~/dev/xelb" load-path)
+(load-library "exwmrc")
+
+;; Enable EXWM
+(exwm-enable)
 
 ;;;;
 (custom-set-variables
