@@ -13,17 +13,28 @@
 (push "~/.emacs.d/thirdparty" load-path)
 (push "~/dev/gnu-emacs-stuff" load-path)
 (push "/usr/share/emacs24/site-lisp/git" load-path)
+(autoload 'git-status "git" "git-status" t)
 (load-library "xemacs-theme-source-code")
+(custom-theme-set-faces
+ 'xemacs
+ `(escape-glyph ((t (:weight bold :background "gold" :foreground "blue"
+                             :box (:line-width -1 :color "black"))))))
 
 ;;
-(set-face-font
- 'default "-xos4-terminus-medium-r-normal--32-320-72-72-c-160-koi8-r")
+;(set-face-font
+; 'default "-xos4-terminus-medium-r-normal--32-320-72-72-c-160-koi8-r")
+
+(set-face-attribute 'default nil :family "Inconsolata LGC")
+(set-face-attribute 'default nil :height 192)
 
 (setq inhibit-splash-screen t)
 (setq enable-recursive-minibuffers t)
 (setq select-enable-primary t)
+
 (setq apropos-do-all t)
 (define-key global-map (kbd "C-h a") #'apropos)
+
+(setq Man-notify-method 'pushy)
 
 (set-default 'indent-tabs-mode nil)
 
@@ -324,7 +335,7 @@ CSTR can contain special escape sequences:
 (setq column-number-mode t)
 
 (set-face-background 'mode-line "#c0bf8d")
-(set-face-attribute 'mode-line nil :height 0.4)
+(set-face-attribute 'mode-line nil :height 120)
 
 ;;}}}
 
@@ -696,7 +707,7 @@ If prefix ARG is specified, then replace region with the evaluation result."
 (define-key global-map (kbd "C-c r s") 're-search-forward)
 (define-key global-map (kbd "C-c r r") 're-search-backward)
 (define-key global-map (kbd "C-c r e") 'query-replace-regexp)
-(define-key global-map (kbd "C-c r g") 'igrep)
+(define-key global-map (kbd "C-c r g") 'grep)
 (define-key global-map (kbd "C-c r o") 'occur)
 
 ;; C-cm Prefix for MISC commands
@@ -718,6 +729,32 @@ If prefix ARG is specified, then replace region with the evaluation result."
 (define-key global-map (kbd "C-c m r") 'rst-mode)
 (define-key global-map (kbd "C-c m <RET>") 'hide-cr-mode)
 (define-key global-map (kbd "C-c m p") 'pabbrev-mode)
+
+;;}}}
+
+;;{{{   `-- C-cl - Prefix for Listing commands
+
+(define-key global-map (kbd "C-c l a") 'list-abbrevs)
+(define-key global-map (kbd "C-c l b") 'list-bookmarks)
+(define-key global-map (kbd "C-c l h") 'list-command-history)
+(define-key global-map (kbd "C-c l c") 'list-colors-display)
+(define-key global-map (kbd "C-c l f") 'list-faces-display)
+(define-key global-map (kbd "C-c l i") 'list-itimers)
+(define-key global-map (kbd "C-c l m") 'list-matching-lines)
+(define-key global-map (kbd "C-c l t") 'list-text-properties-at)
+(define-key global-map (kbd "C-c l p") 'list-processes)
+(define-key global-map (kbd "C-c l s") 'list-strokes)
+(define-key global-map (kbd "C-c l .") 'list-tags)
+(define-key global-map (kbd "C-c l k") 'browse-kill-ring)
+(define-key global-map (kbd "C-c l r") 'list-registers)
+(define-key global-map (kbd "C-c l o") 'ofupd-packages-list)
+
+;;}}}
+
+;;{{{   `-- C-cc - Prefix for Count commands
+
+(define-key global-map (kbd "C-c c w") 'count-words)
+(define-key global-map (kbd "C-c c m") 'count-matches)
 
 ;;}}}
 
@@ -902,6 +939,7 @@ auto-insert-alist)
 
 ;;}}}
 
+;(setq exwm-debug-on t)
 (load-library "exwmrc")
 
 ;; Enable EXWM
