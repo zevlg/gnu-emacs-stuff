@@ -80,9 +80,14 @@
   (interactive)
   (start-process "" nil "firefox"))
 
+(defun lg-exwm-start-xlock ()
+  (interactive)
+  (start-process "" nil "xlock"))
+
 (exwm-input-set-key (kbd "H-a X") 'lg-exwm-start-xterm-screen)
 (exwm-input-set-key (kbd "H-a x") 'lg-exwm-start-xterm)
 (exwm-input-set-key (kbd "H-a f") 'lg-exwm-start-firefox)
+(exwm-input-set-key (kbd "H-a l") 'lg-exwm-start-xlock)
 
 (defun lg-xwem-lupe-in ()
   "Start lupe."
