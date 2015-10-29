@@ -32,10 +32,16 @@
                         (interactive)
                         (exwm-workspace-switch 0)))
 
-(exwm-input-set-key (kbd "H-.") 'exwm-next-buffer)
-(exwm-input-set-key (kbd "H-,") 'exwm-previous-buffer)
 
-(exwm-input-set-key (kbd "H-C-l") 'switch-to-other-buffer)
+(exwm-input-set-key (kbd "H-.") 'exwm-wconf-next)
+(exwm-input-set-key (kbd "H-,") 'exwm-wconf-prev)
+(exwm-input-set-key (kbd "H-t") 'exwm-wconf-transpose)
+(exwm-input-set-key (kbd "H-<return>") 'exwm-wconf-push)
+(exwm-input-set-key (kbd "H-<delete>") 'exwm-wconf-remove)
+(exwm-input-set-key (kbd "H-C-l") 'exwm-wconf-other)
+
+(exwm-input-set-key (kbd "H-M-x") 'execute-extended-command)
+
 
 (exwm-input-set-key (kbd "H-x 1") 'delete-other-windows)
 (exwm-input-set-key (kbd "H-x 2") 'split-window-below)
@@ -93,7 +99,7 @@
   "Start lupe."
   (interactive)
   (start-process "" nil
-   "lupe" "-noshape" "-nohud" "-mag" "3" "-geometry" "520x110+200+700")
+   "lupe" "-override_redirect" "-font" "10x20" "-noshape" "-nohud" "-mag" "3" "-geometry" "520x110+200+700")
   (exwm-input-set-key (kbd "H-+") 'lg-xwem-lupe-out))
 
 (defun lg-xwem-lupe-out ()

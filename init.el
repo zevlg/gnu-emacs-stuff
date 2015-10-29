@@ -312,6 +312,8 @@ CSTR can contain special escape sequences:
 
 (size-indication-mode 0)                ;file size
 (toggle-truncate-lines 1)
+(setq truncate-partial-width-windows t)
+(setq line-move-visual nil)
 
 (setq display-time-default-load-average nil)
 (setq display-time-24hr-format t)
@@ -854,7 +856,7 @@ If prefix ARG is specified, then replace region with the evaluation result."
 
 ;; Copyright (C) "
         (substring (current-time-string) -4)
-        " by Zajcev Evegny.
+        " by Zajcev Evgeny.
 
 ;; Author: Zajcev Evgeny <zevlg@yandex.ru>
 ;; Created: " (current-time-string) "
