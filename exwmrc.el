@@ -3,8 +3,13 @@
 (push "~/dev/xelb" load-path)
 
 (require 'exwm)
-(require 'exwm-commands)
-(setq exwm-debug-on t)
+(require 'exwm-wconf)
+(exwm-wconf-push)                       ;push initial
+(exwm-wconf-tabs-mode 1)
+
+(setq exwm-manage-switch-on-maprequest
+      #'(lambda (x)
+          (exwm-wconf-pop-to-buffer (exwm--id->buffer x))))
 
 (exwm-input-set-key (kbd "H-r") 'exwm-reset)
 ;; Bind a key to switch workspace interactively
@@ -21,7 +26,7 @@
 ;; Always use char mode
 (add-hook 'exwm-manage-finish-hook 'exwm-input-release-keyboard)
 
-(setq exwm-workspace-number 3)
+(setq exwm-workspace-number 1)
 
 (exwm-input-set-key (kbd "H-C-0") 'exwm-workspace-switch-nth)
 (exwm-input-set-key (kbd "H-C-1") 'exwm-workspace-switch-nth)
@@ -33,12 +38,16 @@
                         (exwm-workspace-switch 0)))
 
 
+(exwm-input-set-key (kbd "H-]") 'exwm-wconf-next)
+(exwm-input-set-key (kbd "H-[") 'exwm-wconf-prev)
 (exwm-input-set-key (kbd "H-.") 'exwm-wconf-next)
 (exwm-input-set-key (kbd "H-,") 'exwm-wconf-prev)
 (exwm-input-set-key (kbd "H-t") 'exwm-wconf-transpose)
 (exwm-input-set-key (kbd "H-<return>") 'exwm-wconf-push)
 (exwm-input-set-key (kbd "H-<delete>") 'exwm-wconf-remove)
+(exwm-input-set-key (kbd "H-<backspace>") 'exwm-wconf-remove)
 (exwm-input-set-key (kbd "H-C-l") 'exwm-wconf-other)
+(exwm-input-set-key (kbd "H-x H-C-l") 'exwm-wconf-restore-buffer)
 
 (exwm-input-set-key (kbd "H-M-x") 'execute-extended-command)
 
@@ -99,7 +108,7 @@
   "Start lupe."
   (interactive)
   (start-process "" nil
-   "lupe" "-override_redirect" "-font" "10x20" "-noshape" "-nohud" "-mag" "3" "-geometry" "520x110+200+700")
+   "~/bin/lupe" "-override_redirect" "-font" "10x20" "-noshape" "-nohud" "-mag" "3" "-geometry" "520x110+200+700")
   (exwm-input-set-key (kbd "H-+") 'lg-xwem-lupe-out))
 
 (defun lg-xwem-lupe-out ()

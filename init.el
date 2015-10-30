@@ -31,7 +31,8 @@
 (setq enable-recursive-minibuffers t)
 (setq select-enable-primary t)
 
-(setq apropos-do-all t)
+;(setq apropos-do-all t)
+(setq apropos-do-all nil)
 (define-key global-map (kbd "C-h a") #'apropos)
 
 (setq Man-notify-method 'pushy)
@@ -220,6 +221,9 @@ If prefix ARG is specified, switch in other window."
         (switch-to-buffer-other-window scbuf)
       (switch-to-buffer scbuf))))
 
+(setq initial-major-mode 'lisp-interaction-mode)
+(push '("\\*scratch-file\\*$" . lisp-interaction-mode) auto-mode-alist)
+
 (define-key global-map (kbd "M-<f3>") 'lg-switch-to-scratch)
 (define-key global-map (kbd "C-<f3>") 'lg-switch-to-scratch)
 (define-key global-map (kbd "C-c C-s") 'lg-switch-to-scratch)
@@ -313,7 +317,7 @@ CSTR can contain special escape sequences:
 ;;{{{ `-- Minibuffer
 
 (setq echo-keystrokes 0.1)
-(setq resize-mini-windows t)
+(setq resize-mini-windows nil)
 
 ;;}}}
 
@@ -939,8 +943,8 @@ auto-insert-alist)
 
 ;;}}}
 
-;(setq exwm-debug-on t)
-(load-library "exwmrc")
+(let ((exwm-debug-on t))
+  (load-library "exwmrc"))
 
 ;; Enable EXWM
 (exwm-enable)
