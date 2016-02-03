@@ -30,6 +30,7 @@
 (setq inhibit-splash-screen t)
 (setq enable-recursive-minibuffers t)
 (setq select-enable-primary t)
+(setq x-select-enable-clipboard nil)
 
 ;(setq apropos-do-all t)
 (setq apropos-do-all nil)
