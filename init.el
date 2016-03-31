@@ -10,6 +10,7 @@
 (package-initialize)
 (server-start)
 
+(push "~/.emacs.d/lisp" load-path)
 (push "~/.emacs.d/thirdparty" load-path)
 (push "~/dev/gnu-emacs-stuff" load-path)
 (push "/usr/share/emacs24/site-lisp/git" load-path)
@@ -30,7 +31,13 @@
 (setq inhibit-splash-screen t)
 (setq enable-recursive-minibuffers t)
 (setq select-enable-primary t)
-(setq x-select-enable-clipboard nil)
+
+;; make emacs use the clipboard for cut
+(setq select-enable-clipboard t)
+(defun lg-selection-value ()
+  (let ((select-enable-clipboard nil))
+    (gui-selection-value)))
+(setq interprogram-paste-function 'lg-selection-value)
 
 ;(setq apropos-do-all t)
 (setq apropos-do-all nil)
@@ -264,6 +271,7 @@ If prefix ARG is supplied, do not move point."
               '(end-of-line)
               '(newline-and-indent))))
 
+(define-key global-map (kbd "RET") 'newline-and-indent)
 (define-key global-map (kbd "C-j") 'lg-insert-nl-at-eol)
 
 ;; To join two lines (aka vi's J)
@@ -798,6 +806,12 @@ If prefix ARG is specified, then replace region with the evaluation result."
 
 ;;}}}
 
+;;{{{   `-- C-cg - Git commands
+
+(define-key global-map (kbd "C-c g s") 'git-status)
+
+;;}}}
+
 ;;{{{ `-- Python
 
 ;; Builtint `python-mode' is slow in emacs 25, so use this one
@@ -1226,6 +1240,8 @@ auto-insert-alist)
 (let ((exwm-debug-on t))
   (load-library "exwmrc"))
 
+;;;;; MAIL.RU stuff
+
 ;;; Jenkins
 (push "~/.emacs.d/thirdparty/jenkins" load-path)
 (autoload 'jenkins "jenkins" "Jenkins CI" t)
@@ -1237,6 +1253,28 @@ auto-insert-alist)
 
 (setq jenkins-colwidth-name 35)
 
+;; Commit messages to git
+(defun lg-git-ticket-name ()
+  "Extract JIRA ticket name from branch name."
+  (let* ((branch (git-symbolic-ref "HEAD"))
+         (pbranch (split-string
+                   (if (string-match "^refs/heads/" branch)
+                       (substring branch (match-end 0))
+                     branch)
+                   "-")))
+    (if (string-equal "trg" (car pbranch))
+        (concat (upcase (car pbranch)) "-" (cadr pbranch))
+      "")))
+
+(defun lg-add-trg-label ()
+  "Insert JIRA ticket name into commit message."
+  (let ((ticket (lg-git-ticket-name)))
+    (unless (string-empty-p ticket)
+      (insert "\n")
+      (insert ticket)
+      (insert ": "))))
+
+(add-hook 'git-log-edit-mode-hook 'lg-add-trg-label)
 
 ;;; Nim langugae
 (push "~/.emacs.d/thirdparty/nim-mode" load-path)
@@ -1244,6 +1282,12 @@ auto-insert-alist)
 
 ;; Enable EXWM
 (exwm-enable)
+
+;; For .nix files
+(require 'nix-mode)
+
+;;; Mail.ru specific emacs setup
+(require 'mailru)
 
 ;;;;
 (custom-set-variables

@@ -136,7 +136,7 @@
 
 (defun lg-exwm-start-xlock ()
   (interactive)
-  (start-process "" nil "xlock" "-mode" "icon"))
+  (start-process "" nil "xlock" "-mode" "eyes"))
 
 (exwm-input-set-key (kbd "H-a X") 'lg-exwm-start-xterm-screen)
 (exwm-input-set-key (kbd "H-a x") 'lg-exwm-start-xterm)
