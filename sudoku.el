@@ -60,7 +60,6 @@
 ;; ~~~~~~~~~~~~~
 ;; You might want to customize next variables:
 ;;
-;;   * `sudoku-font-size' - Font size for sudoku grid
 ;;   * `sudoku-level'     - Level for puzzles
 ;;   * `sudoku-download'  - Non-nil to download puzzles
 ;;   * `sudoku-download-source' - Source to download puzzles from
@@ -173,17 +172,12 @@
   :group 'sudoku)
 
 (defface sudoku-face
-  '((t (:height 480)))
+  '((t (:inherit default :height 2.0)))
   "Base face used by sudoku."
   :group 'sudoku)
 
-(defface sudoku-border-face
-  `((t (:inherit sudoku-face)))
-  "Face for drawing sudoku board borders."
-  :group 'sudoku)
-
 (defface sudoku-orig-value-face
-  `((t (:bold t :inherit sudoku-border-face)))
+  `((t (:inherit sudoku-face)))
   "Face for original values in sudoku field."
   :group 'sudoku)
 
@@ -200,23 +194,23 @@
 
 (defface sudoku-value-pencil-1-face
   `((((type tty) (class color))
-     (:foreground "slategray" :inherit sudoku-border-face))
+     (:foreground "slategray" :inherit sudoku-face))
     (((class color) (background light))
-     (:foreground "slategray" :inherit sudoku-border-face))
+     (:foreground "slategray" :inherit sudoku-face))
     (((class color) (background dark))
-     (:foreground "slategray" :inherit sudoku-border-face))
-    (t (:inverse-video t :inherit sudoku-border-face)))
+     (:foreground "slategray" :inherit sudoku-face))
+    (t (:inverse-video t :inherit sudoku-face)))
   "Face used for first pencil values."
   :group 'sudoku)
 
 (defface sudoku-value-pencil-2-face
   `((((type tty) (class color))
-     (:foreground "darkgrey" :inherit sudoku-border-face))
+     (:foreground "darkgrey" :inherit sudoku-face))
     (((class color) (background light))
-     (:foreground "darkgrey" :inherit sudoku-border-face))
+     (:foreground "darkgrey" :inherit sudoku-face))
     (((class color) (background dark))
-     (:foreground "darkgrey" :inherit sudoku-border-face))
-    (t (:inverse-video t :inherit sudoku-border-face)))
+     (:foreground "darkgrey" :inherit sudoku-face))
+    (t (:inverse-video t :inherit sudoku-face)))
   "Face used for second pencil values."
   :group 'sudoku)
 
@@ -239,7 +233,7 @@ Any style assumes fixed-width font."
                  (const :tag "Unicode graphics" unicode))
   :group 'sudoku)
 
-(defcustom sudoku-blank-cell '((plain . ?\.) (unicode . #x0387))
+(defcustom sudoku-blank-cell '((plain . ?\.) (sharp . ?\.) (unicode . #x0387))
   "Alist of characters used for blank square."
   :type 'alist
   :group 'sudoku)
@@ -590,6 +584,8 @@ Avoid selecting already solved puzzle unless prefix ARG is specified."
          '("Cell: " sudoku-modeline-cell)
          '(sudoku-modeline-show-values
            (", Hints: " sudoku-modeline-possible-values))
+         "    "
+         global-mode-string
          )))
 
 (defun sudoku-modeline-update ()
@@ -1156,7 +1152,7 @@ Auto-insert does not work for pencils."
 
 (defun sudoku-board-insert-cell (cell)
   (if (or (null cell) (and (numberp cell) (= cell 0)))
-      (insert-face (sudoku-blank-cell) 'sudoku-border-face)
+      (insert-face (sudoku-blank-cell) 'sudoku-face)
     (insert-face (+ 48 (sudoku-cell-num cell))
                  (or (plist-get (sudoku-cell-props cell) :face)
                      'sudoku-orig-value-face))))
@@ -1229,56 +1225,56 @@ If MESSAGE is specified insert it after the board."
              (insrow (rownum)
                (let ((row (nth rownum board)))
                  (insert-face (format "%c " (aref style 5))
-                              'sudoku-border-face)
+                              'sudoku-face)
                  (sudoku-board-insert-cell (nth 0 row))
-                 (insert-face " " 'sudoku-border-face)
+                 (insert-face " " 'sudoku-face)
                  (sudoku-board-insert-cell (nth 1 row))
-                 (insert-face " " 'sudoku-border-face)
+                 (insert-face " " 'sudoku-face)
                  (sudoku-board-insert-cell (nth 2 row))
-                 (insert-face " " 'sudoku-border-face)
+                 (insert-face " " 'sudoku-face)
                  (insert-face (format "%c " (aref style 14))
-                              'sudoku-border-face)
+                              'sudoku-face)
                  (sudoku-board-insert-cell (nth 3 row))
-                 (insert-face " " 'sudoku-border-face)
+                 (insert-face " " 'sudoku-face)
                  (sudoku-board-insert-cell (nth 4 row))
-                 (insert-face " " 'sudoku-border-face)
+                 (insert-face " " 'sudoku-face)
                  (sudoku-board-insert-cell (nth 5 row))
-                 (insert-face " " 'sudoku-border-face)
+                 (insert-face " " 'sudoku-face)
                  (insert-face (format "%c " (aref style 14))
-                              'sudoku-border-face)
+                              'sudoku-face)
                  (sudoku-board-insert-cell (nth 6 row))
-                 (insert-face " " 'sudoku-border-face)
+                 (insert-face " " 'sudoku-face)
                  (sudoku-board-insert-cell (nth 7 row))
-                 (insert-face " " 'sudoku-border-face)
+                 (insert-face " " 'sudoku-face)
                  (sudoku-board-insert-cell (nth 8 row))
-                 (insert-face " " 'sudoku-border-face)
+                 (insert-face " " 'sudoku-face)
                  (insert-face (format "%c" (aref style 7))
-                              'sudoku-border-face)
+                              'sudoku-face)
                  (inshelp)
                  (insert "\n")
                  )))
         (insert-face (format "%c%s%c%s%c%s%c"
                        (aref style 0) top-hc (aref style 2) top-hc
                        (aref style 2) top-hc (aref style 3))
-                     'sudoku-border-face)
+                     'sudoku-face)
         (insert "\n")
         (insrow 0) (insrow 1) (insrow 2)
         (insert-face (format "%c%s%c%s%c%s%c"
                        (aref style 4) hc (aref style 12) hc
                        (aref style 12) hc (aref style 6))
-                     'sudoku-border-face)
+                     'sudoku-face)
         (inshelp) (insert "\n")
         (insrow 3) (insrow 4) (insrow 5)
         (insert-face (format "%c%s%c%s%c%s%c"
                        (aref style 4) hc (aref style 12) hc
                        (aref style 12) hc (aref style 6))
-                     'sudoku-border-face)
+                     'sudoku-face)
         (inshelp) (insert "\n")
         (insrow 6) (insrow 7) (insrow 8)
         (insert-face (format "%c%s%c%s%c%s%c"
                        (aref style 8) bot-hc (aref style 10) bot-hc
                        (aref style 10) bot-hc (aref style 11))
-                     'sudoku-border-face)
+                     'sudoku-face)
         (inshelp) (insert "\n")
         (when (sudoku-puzzle-url sudoku-puzzle)
 	  (insert "\n")
