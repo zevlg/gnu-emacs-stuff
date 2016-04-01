@@ -1229,6 +1229,16 @@ auto-insert-alist)
 
 (define-key global-map (kbd "C-c w j") 'webjump)
 
+(defun multitran ()
+  "Jump to multitran"
+  (interactive)
+  (browse-url (webjump-url-fix (destructuring-bind (name . expr)
+                                   (assoc-string "MultiTran" webjump-sites t)
+                                 (webjump-builtin expr name)))))
+
+(define-key global-map (kbd "C-c d d") 'multitran)
+(define-key global-map (kbd "C-c d r") 'multitran)
+
 ;;}}}
 
 ;;; C-mode
@@ -1236,6 +1246,10 @@ auto-insert-alist)
 
 ;; ERC
 (setq erc-track-enable-keybindings nil)
+
+;;; Haskell mode
+(push "~/.emacs.d/thirdparty/haskell-mode" load-path)
+(require 'haskell-mode-autoloads)
 
 (let ((exwm-debug-on t))
   (load-library "exwmrc"))
@@ -1284,10 +1298,12 @@ auto-insert-alist)
 (exwm-enable)
 
 ;; For .nix files
-(require 'nix-mode)
+(ignore-errors
+  (require 'nix-mode))
 
 ;;; Mail.ru specific emacs setup
-(require 'mailru)
+(ignore-errors
+  (require 'mailru))
 
 ;;;;
 (custom-set-variables
