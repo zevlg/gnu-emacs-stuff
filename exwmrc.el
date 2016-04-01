@@ -2,11 +2,42 @@
 (push "~/dev/exwm" load-path)
 (push "~/dev/xelb" load-path)
 
+(defun lg-minibuf-focus-in ()
+  (select-frame-set-input-focus (selected-frame) t))
+
+(defun lg-minibuf-focus-out ()
+  (exwm-input--update-focus))
+
+(add-hook 'minibuffer-setup-hook 'lg-minibuf-focus-in)
+(add-hook 'minibuffer-exit-hook 'lg-minibuf-focus-out)
+
+
 (require 'exwm)
 (require 'exwm-wconf)
 (exwm-wconf-push)                       ;push initial
 (exwm-wconf-tabs-mode 1)
+(add-hook 'exwm-manage-finish-hook 'exwm-wconf-push)
 
+(defun lg-wconf-update-p (wconf)
+  (let ((sbuf (car (exwm-wconf--selected))))
+    (or (not (buffer-live-p sbuf))
+        (and (not (eq (buffer-local-value 'major-mode sbuf) 'exwm-mode))
+             (not (eq major-mode 'exwm-mode))))))
+
+(setq exwm-wconf-autoupdate-predicate 'lg-wconf-update-p)
+
+(setq exwm-wconf--header-prefix
+      '(:eval (format "[%d]" exwm-workspace-current-index)))
+(setq exwm-wconf--header-string '(" "))
+
+;; Disable in modeline
+(display-time-mode -1)
+
+;; Enable header-line
+(with-exwm-wconf-header-line
+ (display-time-mode 1))
+
+
 (setq exwm-manage-switch-on-maprequest
       #'(lambda (x)
           (exwm-wconf-pop-to-buffer (exwm--id->buffer x))))
@@ -47,7 +78,10 @@
 (exwm-input-set-key (kbd "H-<delete>") 'exwm-wconf-remove)
 (exwm-input-set-key (kbd "H-<backspace>") 'exwm-wconf-remove)
 (exwm-input-set-key (kbd "H-C-l") 'exwm-wconf-other)
+
 (exwm-input-set-key (kbd "H-x H-C-l") 'exwm-wconf-restore-buffer)
+(exwm-input-set-key (kbd "H-x H-l") 'exwm-wconf-restore-buffer)
+(exwm-input-set-key (kbd "H-l") 'exwm-wconf-restore-buffer)
 
 (exwm-input-set-key (kbd "H-M-x") 'execute-extended-command)
 
@@ -82,6 +116,11 @@
 ;;     (ido-switch-buffer)))
 ;; TODO
 (exwm-input-set-key (kbd "H-x b") 'lg-ido-switch-app)
+(exwm-input-set-key (kbd "H-:") 'eval-expression)
+(exwm-input-set-key (kbd "H-C-x") 'execute-extended-command)
+(exwm-input-set-key (kbd "H-M-x") 'execute-extended-command)
+(exwm-input-set-key (kbd "H-!") 'shell-command)
+(exwm-input-set-key (kbd "H-#") 'lg-mini-calc)
 
 (defun lg-exwm-start-xterm-screen ()
   (interactive)
@@ -97,18 +136,25 @@
 
 (defun lg-exwm-start-xlock ()
   (interactive)
-  (start-process "" nil "xlock"))
+  (start-process "" nil "xlock" "-mode" "eyes"))
 
 (exwm-input-set-key (kbd "H-a X") 'lg-exwm-start-xterm-screen)
 (exwm-input-set-key (kbd "H-a x") 'lg-exwm-start-xterm)
 (exwm-input-set-key (kbd "H-a f") 'lg-exwm-start-firefox)
 (exwm-input-set-key (kbd "H-a l") 'lg-exwm-start-xlock)
 
+(defun lg-lupe-geometry ()
+  (let ((dw (x-display-pixel-width)))
+    (cond ((<= dw 1920) "520x110+200+700")
+          ((<= dw 2560) "720x110+200+1000")
+          (t "520x110+200+700"))))
+
 (defun lg-xwem-lupe-in ()
   "Start lupe."
   (interactive)
   (start-process "" nil
-   "~/bin/lupe" "-override_redirect" "-font" "10x20" "-noshape" "-nohud" "-mag" "3" "-geometry" "520x110+200+700")
+                 "~/bin/lupe" "-override_redirect" "-font" "10x20" "-noshape" "-nohud" "-mag" "3"
+                 "-geometry" (lg-lupe-geometry))
   (exwm-input-set-key (kbd "H-+") 'lg-xwem-lupe-out))
 
 (defun lg-xwem-lupe-out ()
@@ -134,5 +180,17 @@
 
 (exwm-input-set-key (kbd "H-f") 'exwm--forward-app)
 (exwm-input-set-key (kbd "H-b") 'exwm--backward-app)
+
+
+(defun lg-exwm-unmanage-all ()
+  (mapc (lambda (e)
+          (let ((win (car e)))
+            (exwm-manage--unmanage-window win t)
+            (xcb:+request exwm--connection
+                (make-instance 'xcb:MapWindow :window win))
+            (xcb:flush exwm--connection)))
+        exwm--id-buffer-alist))
+
+(add-hook 'kill-emacs-hook 'lg-exwm-unmanage-all)
 
 ;; exwmrc.el ends here

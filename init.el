@@ -2,14 +2,15 @@
 ;;
 ;; Copyright (C) 2015 by Zajcev Evgeny.
 ;;
-
+(set-frame-height nil 30)
 ;;(require 'package)
 ;;(add-to-list 'package-archives
 ;;             '("elpy" . "https://jorgenschaefer.github.io/packages/"))
 
 (package-initialize)
-;(server-start)
+(server-start)
 
+(push "~/.emacs.d/lisp" load-path)
 (push "~/.emacs.d/thirdparty" load-path)
 (push "~/dev/gnu-emacs-stuff" load-path)
 (push "/usr/share/emacs24/site-lisp/git" load-path)
@@ -25,11 +26,18 @@
 ; 'default "-xos4-terminus-medium-r-normal--32-320-72-72-c-160-koi8-r")
 
 (set-face-attribute 'default nil :family "Inconsolata LGC")
-(set-face-attribute 'default nil :height 192)
+(set-face-attribute 'default nil :height 240)
 
 (setq inhibit-splash-screen t)
 (setq enable-recursive-minibuffers t)
 (setq select-enable-primary t)
+
+;; make emacs use the clipboard for cut
+(setq select-enable-clipboard t)
+(defun lg-selection-value ()
+  (let ((select-enable-clipboard nil))
+    (gui-selection-value)))
+(setq interprogram-paste-function 'lg-selection-value)
 
 ;(setq apropos-do-all t)
 (setq apropos-do-all nil)
@@ -44,6 +52,7 @@
 (put 'set-goal-column 'disabled nil)
 
 (setq default-scroll-bar-width 6)
+(scroll-bar-mode -1)
 
 (mouse-avoidance-mode 'none)
 (blink-cursor-mode 0)
@@ -224,6 +233,32 @@ If prefix ARG is specified, switch in other window."
 (setq initial-major-mode 'lisp-interaction-mode)
 (push '("\\*scratch-file\\*$" . lisp-interaction-mode) auto-mode-alist)
 
+;;; Create *scratch-file* and make it unkillable
+;(add-hook 'term-setup-hook (lambda () (kill-buffer "*scratch*")))
+(with-current-buffer
+    (setq lsf-buffer (find-file-noselect lg-scratch-file))
+  (kill-buffer "*scratch*")
+  (rename-buffer "*scratch*"))
+
+(defun lg-save-lsf-buffer ()
+  "Save *scratch-file* buffer on exit."
+  (when (buffer-live-p lsf-buffer)
+    (with-current-buffer lsf-buffer
+      (save-buffer))))
+
+;; for slippery fingers
+(defun lg-ask-exit-emacs (arg)
+  "Ask for confirmation before exit.
+If used with prefix ARG, force Emacs to exit, skiping `kill-emacs-hook'."
+  (interactive "P")
+  (if arg
+      (let (kill-emacs-hook)
+        (kill-emacs))
+
+    (when (yes-or-no-p "Exit Emacs?")
+      (lg-save-lsf-buffer)
+      (save-buffers-kill-emacs))))
+
 (define-key global-map (kbd "M-<f3>") 'lg-switch-to-scratch)
 (define-key global-map (kbd "C-<f3>") 'lg-switch-to-scratch)
 (define-key global-map (kbd "C-c C-s") 'lg-switch-to-scratch)
@@ -236,6 +271,7 @@ If prefix ARG is supplied, do not move point."
               '(end-of-line)
               '(newline-and-indent))))
 
+(define-key global-map (kbd "RET") 'newline-and-indent)
 (define-key global-map (kbd "C-j") 'lg-insert-nl-at-eol)
 
 ;; To join two lines (aka vi's J)
@@ -326,7 +362,7 @@ CSTR can contain special escape sequences:
 (column-number-mode 1)
 
 (size-indication-mode 0)                ;file size
-(toggle-truncate-lines 1)
+;(toggle-truncate-lines 1)
 (setq truncate-partial-width-windows t)
 (setq line-move-visual nil)
 
@@ -582,7 +618,8 @@ CSTR can contain special escape sequences:
 (setq highline-priority 1000)
 
 ;;; Highlight current line highline.el customization
-(autoload 'highline-local-on "highline" nil t)
+(autoload 'highline-local-on "highline" nil nil)
+(autoload 'highline-mode "highline" nil t)
 
 (defface highlight-line-face
   '((((class color) (background dark))
@@ -679,7 +716,14 @@ If prefix ARG is specified, then replace region with the evaluation result."
 (define-key emacs-lisp-mode-map (kbd "C-c e r") 'lg-emacs-eval-region)
 (define-key emacs-lisp-mode-map (kbd "C-c e f") 'eval-defun)
 (define-key emacs-lisp-mode-map (kbd "C-c e s") 'eval-last-sexp)
-(define-key emacs-lisp-mode-map (kbd "C-c e e") 'macroexpand-sexp)
+;; NOTE: There is also `emacs-lisp-macroexpand'
+(define-key emacs-lisp-mode-map (kbd "C-c e e") 'pp-macroexpand-last-sexp)
+
+(define-key lisp-interaction-mode-map (kbd "C-c e b") 'lg-emacs-eval-buffer)
+(define-key lisp-interaction-mode-map (kbd "C-c e r") 'lg-emacs-eval-region)
+(define-key lisp-interaction-mode-map (kbd "C-c e f") 'eval-defun)
+(define-key lisp-interaction-mode-map (kbd "C-c e s") 'eval-last-sexp)
+(define-key lisp-interaction-mode-map (kbd "C-c e e") 'pp-macroexpand-last-sexp)
 
 ;;}}}
 
@@ -751,7 +795,7 @@ If prefix ARG is specified, then replace region with the evaluation result."
 (define-key global-map (kbd "C-c l .") 'list-tags)
 (define-key global-map (kbd "C-c l k") 'browse-kill-ring)
 (define-key global-map (kbd "C-c l r") 'list-registers)
-(define-key global-map (kbd "C-c l o") 'ofupd-packages-list)
+(define-key global-map (kbd "C-c l o") 'list-packages)
 
 ;;}}}
 
@@ -759,6 +803,12 @@ If prefix ARG is specified, then replace region with the evaluation result."
 
 (define-key global-map (kbd "C-c c w") 'count-words)
 (define-key global-map (kbd "C-c c m") 'count-matches)
+
+;;}}}
+
+;;{{{   `-- C-cg - Git commands
+
+(define-key global-map (kbd "C-c g s") 'git-status)
 
 ;;}}}
 
@@ -787,7 +837,14 @@ If prefix ARG is specified, then replace region with the evaluation result."
 
 (add-hook 'python-mode-hook 'lg-py-install-keys)
 
-;;; TODO: pyrex mode
+(define-key py-shell-map (kbd "M-C-l") 'switch-to-other-buffer)
+
+;;; Cython mode
+(require 'cython-mode)
+
+;; For scons
+(add-to-list 'auto-mode-alist '("SConstruct" . python-mode))
+(add-to-list 'auto-mode-alist '("SConscript" . python-mode))
 
 ;;}}}
 
@@ -943,11 +1000,294 @@ auto-insert-alist)
 
 ;;}}}
 
+;;{{{   `-- GNUS
+
+(require 'gnus)
+
+(setq gnus-novice-user nil)
+(setq smtpmail-smtp-user "e.zajcev@corp.mail.ru")
+
+(setq gnus-secondary-select-methods
+      '((nnimap "Mail.ru"
+                (nnimap-inbox "INBOX")
+                (nnimap-server-port 993)
+                (nnimap-address "imap.mail.ru")
+                (nnimap-stream ssl)
+                (nnimap-inbox "INBOX")
+                (nnimap-split-methods
+                 (("JIRA" "^From.*tasks@jira\\.mail\\.ru")
+                  ("target-team" "^Sender:.*target-team[^@]*@ml.corp.mail.ru")
+                  ("sentry" "^X-Sentry-Server")
+                  ("gitlab" "^X-GitLab-Project")
+                  ("unknown" "")))
+                )))
+
+(setq gnus-select-method (car gnus-secondary-select-methods))
+
+(setq gnus-logo-color-style 'purp)
+(setq gnus-logo-colors
+      (cdr (assq gnus-logo-color-style gnus-logo-color-alist)))
+
+(setq user-full-name "Zajcev Evgeny")
+(setq user-mail-address "e.zajcev@corp.mail.ru")
+
+;; Allow '/' in group names
+(setq gnus-invalid-group-regexp "[: `'\"]\\|^$")
+
+
+(setq gnus-message-archive-method "nnimap:Mail.ru")
+(setq gnus-message-archive-group "Отправленные")
+
+(setq gnus-posting-styles
+      '((".*"
+         (name "Zajcev Evgeny")
+         (address "e.zajcev@corp.mail.ru")
+         (signature "lg"))
+        ))
+
+(setq gnus-summary-line-format
+      (concat
+       "%*%5{%U%R%z%}" ;%uc"
+       "%4{|%}"
+       "%-4k"
+       "%4{|%}"
+       "%2{%-8&user-date;%}" ; Datum
+       "%4{|%}"
+       "%2{ %}%(%-16,16F" ;From/To
+       "%)%4{|%}"
+       "%2{ %}%3{%B%}%1{%s%}\n"))
+
+; gnus-face-1
+(copy-face 'default 'mysubject)
+(setq gnus-face-1 'mysubject)
+
+;gnus-face-2
+(copy-face 'default 'mytime)
+(set-face-foreground 'mytime "indianred4")
+(setq gnus-face-2 'mytime)
+
+;gnus-face-3
+;(copy-face 'ct-face1 'mythreads)
+(copy-face 'default 'mythreads)
+(set-face-foreground 'mythreads "indianred4")
+(setq gnus-face-3 'mythreads)
+
+;gnus-face-4
+(copy-face 'default 'mygrey)
+(set-face-foreground 'mygrey "grey")
+(setq gnus-face-4 'mygrey)
+
+;gnus-face-5
+(copy-face 'default 'myblack)
+(set-face-foreground 'myblack "grey60")
+(setq gnus-face-5 'myblack)
+
+;gnus-face-6
+(copy-face 'default 'mybiggernumbers)
+(set-face-foreground 'mybiggernumbers "indianred4")
+(setq gnus-face-6 'mybiggernumbers)
+
+(setq gnus-group-line-format
+       "%6{%M%S%p    %}%(%2{%4y%}%4{|%}%s%-34,34G%3O%l %4{|%}%2{%4U.%}%4{|%}%2{%3T!%}%4{|%}%2{%3I?%}%4{|%}%2{%5t%} %)%4{| %}%1{%D%}\n")
+
+
+(setq gnus-sum-thread-tree-root "+ ")
+(setq gnus-sum-thread-tree-single-indent "* ")
+(setq gnus-sum-thread-tree-vertical "| ")
+(setq gnus-sum-thread-tree-indent "  ") ;; 3 Leerzeichen funktioniert
+(setq gnus-sum-thread-tree-leaf-with-other "+-> ")
+(setq gnus-sum-thread-tree-single-leaf "`-> ")
+
+
+(setq gnus-sum-thread-tree-false-root "> ")
+;(setq gnus-sum-thread-tree-root "")
+
+; Darstellung von Followups
+;(setq gnus-summary-same-subject ">")
+(setq gnus-summary-same-subject "")
+
+;(setq gnus-build-sparse-threads 'some)
+;(setq gnus-fetch-old-headers 'some)
+
+(add-hook 'gnus-group-mode-hook 'gnus-topic-mode)
+
+(add-hook 'gnus-group-prepare-hook 'highline-local-on)
+(add-hook 'gnus-summary-prepare-hook 'highline-local-on)
+
+(setq gnus-summary-default-high-score 500)
+(setq gnus-summary-default-low-score -1)
+(setq gnus-score-expiry-days 14
+      gnus-save-score t
+      bbdb/gnus-score-default 10
+      gnus-score-thread-simplify t)
+
+(setq gnus-article-decode-mime-words t)
+(setq gnus-article-decode-charset 1)
+
+                                        ;(require 'gnus-demon)
+;; periodically check for new mail
+(gnus-demon-add-handler 'gnus-group-get-new-news 3 nil)
+;(gnus-demon-init)
+
+;;; New mail notifier
+(defvar lg-gnus-beepable-groups "target-team\\|JIRA"
+  "A regexp that matches groups for which mail notification should take place.")
+
+(defun lg-gnus-notify ()
+  "Beep if we got mail in an interesting folder."
+  (let ((case-fold-search t)
+        (you-got-mail nil))
+    (dolist (group nnmail-split-history)
+      (message (format "%s" (caar group)))
+      (when (string-match lg-gnus-beepable-groups (caar group))
+        (setq you-got-mail t)))
+    (when you-got-mail
+      (beep)
+      (sleep-for 0.2)
+      (beep)
+      (sleep-for 0.1)
+      (beep))))
+
+(add-hook 'gnus-after-getting-new-news-hook 'lg-gnus-notify)
+
+;; Keywords header generation
+;(autoload 'message-keyword-insert "messkeyw")
+;(add-hook 'message-send-hook 'message-keyword-insert)
+
+;; Make sure my followups are scored higher.
+(add-hook 'message-sent-hook 'gnus-score-followup-article)
+(add-hook 'message-sent-hook 'gnus-score-followup-thread)
+
+;;}}}
+
+;;{{{ `-- Webjump
+
+;; <X-URL:http://www.neilvandyke.org/webjump/webjump-plus.el>
+(setq webjump-sites
+      `(
+        ("Google" .
+         [simple-query "www.google.com" "www.google.com/search?q=" ""])
+
+        ("Yandex.RU" .
+         [simple-query "www.ya.ru"
+                       "http://www.yandex.ru/yandsearch?text="
+                       "&rpt=rad"])
+        ("Youtube.com" .
+         [simple-query "www.youtube.com"
+                       "http://www.youtube.com/results?search_query="
+                       "&search_type=&aq=f"])
+
+        ("MiniNova" .
+         [simple-query "www.mininova.org"
+                       "http://www.mininova.org/search/?search=" ""])
+
+        ("CodeSearch" .
+         [simple-query "www.google.com" "www.google.com/codesearch?q=" ""])
+
+        ("Images" .
+         [simple-query "images.google.com" "images.google.com/images?q=" ""])
+
+        ("LispDoc" .
+         [simple-query "lispdoc.com" "http://lispdoc.com/?q=" ""])
+
+        ("Ru.Wikipedia.ORG" .
+         [simple-query "ru.wikipedia.org"
+                       "http://ru.wikipedia.org/wiki/Special:Search?search=" ""])
+
+        ("En.Wikipedia.ORG" .
+         [simple-query "en.wikipedia.org"
+                       "http://en.wikipedia.org/wiki/Special:Search?search=" ""])
+
+        ("Gramota.RU" .
+         [simple-query
+          "www.gramota.ru" "http://dic.gramota.ru/search.php?word="
+          "&lop=x&gorb=x&efr=x&zar=x&ag=x&ab=x&lv=x&pe=x&az=x"])
+
+        ("Price.RU" .
+         [simple-query "www.price.ru"
+                       "www.price.ru/bin/price/ctgrlist?pnam="
+                       "&base=1&where=00"])
+
+        ("Define" .
+         [simple-query "www.google.com"
+                       "www.google.com/search?q=define%3A" ""])
+
+        ("RFC Editor" .
+         [simple-query "www.rfc-editor.org"
+                       "www.rfc-editor.org/cgi-bin/rfcsearch.pl?searchwords="
+                       ,(concat "&opt=All%20Fields"
+                                "&filefmt=txt"
+                                "&search_doc=search_all"
+                                "&match_method=prefix"
+                                "&sort_method=newer"
+                                "&num=25"
+                                "&format=ftp")])
+
+        ("JIRA" . [simple-query "jira.mail.ru" "http://jira.mail.ru/browse/" ""])
+        ("MultiTran" . [simple-query "multitran.ru" "http://www.multitran.ru/c/m.exe?l1=2&l2=1&s=" ""])
+        ))
+
+(define-key global-map (kbd "C-c w j") 'webjump)
+
+;;}}}
+
+;;; C-mode
+(push (cons 'c-mode "bsd") c-default-style)
+
+;; ERC
+(setq erc-track-enable-keybindings nil)
+
 (let ((exwm-debug-on t))
   (load-library "exwmrc"))
 
+;;;;; MAIL.RU stuff
+
+;;; Jenkins
+(push "~/.emacs.d/thirdparty/jenkins" load-path)
+(autoload 'jenkins "jenkins" "Jenkins CI" t)
+
+(setq jenkins-api-token "ca89eacf6d63db3d95408de4d51c1d3a")
+(setq jenkins-url "http://jenkins.trgqa.devmail.ru:80/")
+(setq jenkins-username "e.zajcev")
+(setq jenkins-viewname "target")
+
+(setq jenkins-colwidth-name 35)
+
+;; Commit messages to git
+(defun lg-git-ticket-name ()
+  "Extract JIRA ticket name from branch name."
+  (let* ((branch (git-symbolic-ref "HEAD"))
+         (pbranch (split-string
+                   (if (string-match "^refs/heads/" branch)
+                       (substring branch (match-end 0))
+                     branch)
+                   "-")))
+    (if (string-equal "trg" (car pbranch))
+        (concat (upcase (car pbranch)) "-" (cadr pbranch))
+      "")))
+
+(defun lg-add-trg-label ()
+  "Insert JIRA ticket name into commit message."
+  (let ((ticket (lg-git-ticket-name)))
+    (unless (string-empty-p ticket)
+      (insert "\n")
+      (insert ticket)
+      (insert ": "))))
+
+(add-hook 'git-log-edit-mode-hook 'lg-add-trg-label)
+
+;;; Nim langugae
+(push "~/.emacs.d/thirdparty/nim-mode" load-path)
+;(require 'nim-mode)
+
 ;; Enable EXWM
 (exwm-enable)
+
+;; For .nix files
+(require 'nix-mode)
+
+;;; Mail.ru specific emacs setup
+(require 'mailru)
 
 ;;;;
 (custom-set-variables
@@ -955,7 +1295,10 @@ auto-insert-alist)
  ;; If you edit it by hand, you could mess it up, so be careful.
  ;; Your init file should contain only one such instance.
  ;; If there is more than one, they won't work right.
- '(package-selected-packages (quote (undo-tree elpy))))
+ '(package-selected-packages (quote (dash undo-tree elpy)))
+ '(send-mail-function (quote smtpmail-send-it))
+ '(smtpmail-smtp-server "smtp.mail.ru")
+ '(smtpmail-smtp-service 587))
 (custom-set-faces
  ;; custom-set-faces was added by Custom.
  ;; If you edit it by hand, you could mess it up, so be careful.
