@@ -83,6 +83,11 @@ bottom of the buffer stack."
 
 ;;; Use `iswitchb' instead of ugly `switch-to-buffer'.
 (setq ido-max-window-height 1)
+;; Use `.' for dired
+(setq ido-show-dot-for-dired t)
+;; Disable confusing auto-merging
+(setq ido-auto-merge-work-directories-length -1)
+
 (ido-mode 1)
 
 ;; M-x package-install RET undo-tree RET
@@ -1304,6 +1309,10 @@ auto-insert-alist)
 ;;; Mail.ru specific emacs setup
 (ignore-errors
   (require 'mailru))
+
+;;; Home specific stuff
+(ignore-errors
+  (require 'home))
 
 ;;;;
 (custom-set-variables
