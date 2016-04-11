@@ -32,6 +32,17 @@
 (setq enable-recursive-minibuffers t)
 (setq select-enable-primary t)
 
+(setq kill-ring-max 200)
+
+;;; Browse kill ring
+;; git clone https://github.com/browse-kill-ring/browse-kill-ring.git
+;; Installs `M-y' binding to run `browse-kill-ring' command.
+(require 'browse-kill-ring)
+(browse-kill-ring-default-keybindings)
+(setq browse-kill-ring-show-preview nil
+      browse-kill-ring-highlight-current-entry t
+      browse-kill-ring-highlight-inserted-item t)
+
 ;; make emacs use the clipboard for cut
 (setq select-enable-clipboard t)
 (defun lg-selection-value ()
@@ -81,7 +92,7 @@ bottom of the buffer stack."
 (require 'comint)
 (define-key comint-mode-map (kbd "C-M-l") 'switch-to-other-buffer)
 
-;;; Use `iswitchb' instead of ugly `switch-to-buffer'.
+;;; Uso ido to switch buffers and open files
 (setq ido-max-window-height 1)
 ;; Use `.' for dired
 (setq ido-show-dot-for-dired t)
@@ -1298,6 +1309,23 @@ auto-insert-alist)
 ;;; Nim langugae
 (push "~/.emacs.d/thirdparty/nim-mode" load-path)
 ;(require 'nim-mode)
+
+;;; Lua - https://github.com/immerrr/lua-mode.git
+(push "~/.emacs.d/thirdparty/lua-mode" load-path)
+(autoload 'lua-mode "lua-mode" "" t nil)
+(add-to-list 'auto-mode-alist '("\\.lua$" . lua-mode))
+(add-to-list 'interpreter-mode-alist '("lua" . lua-mode))
+(defalias 'run-lua #'lua-start-process)
+(autoload 'lua-start-process "lua-mode" "" t nil)
+
+(defun lg-lua-install-keys ()
+  (local-set-key (kbd "C-c e r") 'lua-send-region)
+  (local-set-key (kbd "C-c e b") 'lua-send-region)
+  (local-set-key (kbd "C-c e s") 'lua-send-string)
+  (local-set-key (kbd "C-j") 'lg-insert-nl-at-eol)
+  )
+
+(add-hook 'lua-mode-hook 'lg-lua-install-keys)
 
 ;; Enable EXWM
 (exwm-enable)
