@@ -225,7 +225,7 @@ Bindings:
 
   (setq multitran-current-word word)
 
-  ;; Insert rdict header
+  ;; Insert multitran header
   (save-excursion
     (goto-char (point-min))
     (multitran--insert-header))
@@ -292,7 +292,7 @@ If prefix ARG is given, then select language."
 
 ;; History
 (defun multitran--history-push (word &optional url buf)
-  "Push WORD into rdict history."
+  "Push WORD into multitran history."
   ;; truncate history
   (when (> (length multitran-history) multitran-history-max)
     (setq multitran-history (butlast multitran-history)))
@@ -311,13 +311,13 @@ If prefix ARG is given, then select language."
 
     (multitran-mode (plist-get (cdr hi) :word))))
 
-;; If this is called we should be already in the *RDict* buffer.
+;; If this is called we should be already in the *multitran* buffer.
 (defun multitran-history-goto (direction &optional n)
   "Navigate history N times.
 DIRECTION is one of 'next or 'prev."
   (interactive)
 
-  (setq n (% n (length rdict-history)))
+  (setq n (% n (length multitran-history)))
 
   ;; Calculate position
   ;; X: 0, 1, 2,...,n		;dir = nil
