@@ -167,7 +167,7 @@ Order does not matter."
   "Font lock face used to highlight links to other words"
   :group 'multitran)
 
-(defface multitran-header-line
+(defface multitran-header-face
   '((((class color) (background light))
      (:foreground "Gray20" :background "Gray90"))
     (((class color) (background dark))
@@ -180,6 +180,18 @@ Order does not matter."
   "Face used for displaying header-line."
   :group 'multitran)
 
+(defface multitran-section-face
+  '((((class color) (background light))
+     (:background "Gray60"))
+    (((class color) (background dark))
+     (:background "Gray60"))
+    (((class grayscale) (background light))
+     (:background "Gray60"))
+    (((class grayscale) (background dark))
+     (:background "Gray60")))
+  "Face used for displaying translation section."
+  :group 'multitran)
+
 (defsubst multitran-lang-code (lang)
   (cdr (assoc (or lang multitran-language) multitran-languages-map)))
 
@@ -188,6 +200,14 @@ Order does not matter."
 
 (defun multitran-insert (text faces)
   (insert (propertize text 'face faces)))
+
+(defun multitran-linkify (from to url)
+  "Add link to URL as `multitran-link' property."
+  (add-text-properties from to (list 'multitran-link url)))
+
+(defun multitran-link-at (&optional point)
+  "Return `multitran-link' property at POINT."
+  (get-text-property (or point (point)) 'multitran-link))
 
 (defun multitran--wordreference-transcription (word)
   "Fetch WORD transcription from http://wordreference.com"
@@ -209,11 +229,11 @@ Order does not matter."
                            (cdr multitran-languages))
                    (format ", History point: %d/%d"
                            multitran-history-index (length multitran-history)))
-             (list '(multitran-header-line)
-                   '(multitran-header-line bold)
-                   '(multitran-header-line)
-                   '(multitran-header-line)
-                   '(multitran-header-line)))
+             (list '(multitran-header-face)
+                   '(multitran-header-face bold)
+                   '(multitran-header-face)
+                   '(multitran-header-face)
+                   '(multitran-header-face)))
     (insert "\n")))
 
 (defun multitran-mode (&optional word)
@@ -243,6 +263,27 @@ Bindings:
   ;; Finally run hooks
   (run-hooks 'multitran-mode-hook))
 
+(defun multitran--proc-section (start end)
+  (save-restriction
+    (narrow-to-region start end)
+    (goto-char (point-min))
+
+    ;; TODO:
+    ;;  * cleanup section
+    ;;  * extract transcription
+    ;;  * create links
+    ;;  * mark it with multitran-section-face
+    ))
+
+(defun multitran--proc-output (url)
+  "Process html contents."
+  (goto-char (point-min))
+  (let ((found nil))
+    (save-excursion
+      (when (re-search-forward "<table width=\"100%\">\n")
+        (delete-region (point-min) (point)))
+      )))
+
 (defun multitran--url (url &optional word)
   "Fetch and view multitran URL."
   (let ((cur-buf (current-buffer)) buf)
@@ -257,7 +298,7 @@ Bindings:
 
       (url-insert-file-contents url)
 ;      (multitran--fetch-url url)
-;      (multitran--proc-output url)
+      (multitran--proc-output url)
 
       ;; Save into history
       (multitran--history-push word url cur-buf)
