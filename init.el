@@ -198,6 +198,15 @@ If ARG is non-nil delete region, otherwise kill."
 
 ;;}}}
 
+;;{{{ `-- Different bindings
+
+;;; Remove annoying iconifying
+(define-key global-map (kbd "C-z") 'nil)
+
+(define-key global-map (kbd "C-x M-=") 'count-words)
+
+;;}}}
+
 ;;{{{ `-- Useful interactive functions
 
 ;;; Some useful functions
@@ -1348,10 +1357,7 @@ auto-insert-alist)
  ;; If you edit it by hand, you could mess it up, so be careful.
  ;; Your init file should contain only one such instance.
  ;; If there is more than one, they won't work right.
- '(package-selected-packages (quote (dash undo-tree elpy)))
- '(send-mail-function (quote smtpmail-send-it))
- '(smtpmail-smtp-server "smtp.mail.ru")
- '(smtpmail-smtp-service 587))
+ '(package-selected-packages (quote (dash auctex undo-tree elpy))))
 (custom-set-faces
  ;; custom-set-faces was added by Custom.
  ;; If you edit it by hand, you could mess it up, so be careful.
