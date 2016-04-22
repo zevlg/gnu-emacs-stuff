@@ -865,7 +865,7 @@ If prefix ARG is specified, then replace region with the evaluation result."
 (define-key py-shell-map (kbd "M-C-l") 'switch-to-other-buffer)
 
 ;;; Cython mode
-(require 'cython-mode)
+;(require 'cython-mode)
 
 ;; For scons
 (add-to-list 'auto-mode-alist '("SConstruct" . python-mode))
