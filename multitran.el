@@ -41,10 +41,10 @@
            (const :tag "Italiano" "it")
            (const :tag "Espanola" "es")))
 
-(defcustom multitran-transcription t
-  "*Non-nil to enable transcription for english words.
-Transcription is fetched from http://wordreference.com"
-  :type 'boolean
+(defcustom multitran-header-formatters
+  '(miltitran--hf-word multitran--hf-languages multitran--hf-history)
+  "*List of format functions to compose multitran header."
+  :type 'list
   :group 'multitran)
 
 (defcustom multitran-languages '("en" . "ru")
@@ -64,6 +64,11 @@ Order does not matter."
   :type 'number
   :group 'multitran)
 
+(defcustom multitran-subject-padding 2
+  "*Padding between subject and translation in spaces."
+  :type 'number
+  :group 'multitran)
+
 (defcustom multitran-fill-column 80
   "*Fill column for multitran buffer."
   :type 'number
@@ -79,6 +84,11 @@ Order does not matter."
   :type 'directory
   :group 'multitran)
 
+(defcustom multitran-justify-translate default-justification
+  "*Justification for translation part."
+  :type (get 'default-justification 'custom-type)
+  :group 'multitran)
+
 (defvar multitran-mode-map
   (let ((map (make-sparse-keymap)))
     (define-key map (kbd "n") 'next-line)
@@ -92,7 +102,7 @@ Order does not matter."
     (define-key map (kbd "DEL") 'scroll-down)
     (define-key map (kbd "BS") 'scroll-down)
 
-    (define-key map (kbd "q") 'multitran-restore-windows)
+    (define-key map (kbd "q") 'quit-window)
     (define-key map (kbd "]") 'multitran-next)
     (define-key map (kbd "[") 'multitran-prev)
     (define-key map (kbd "TAB") 'multitran-next-link)
@@ -182,13 +192,13 @@ Order does not matter."
 
 (defface multitran-section-face
   '((((class color) (background light))
-     (:background "Gray60"))
+     (:background "Gray70"))
     (((class color) (background dark))
-     (:background "Gray60"))
+     (:background "Gray70"))
     (((class grayscale) (background light))
-     (:background "Gray60"))
+     (:background "Gray70"))
     (((class grayscale) (background dark))
-     (:background "Gray60")))
+     (:background "Gray70")))
   "Face used for displaying translation section."
   :group 'multitran)
 
@@ -196,45 +206,41 @@ Order does not matter."
   (cdr (assoc (or lang multitran-language) multitran-languages-map)))
 
 (defun multitran-faceify (start end faces)
-  (add-text-properties start end 'face faces))
+  (add-face-text-property start end faces))
 
 (defun multitran-insert (text faces)
-  (insert (propertize text 'face faces)))
+  (add-face-text-property 0 (length text) faces t text)
+  (insert text))
 
-(defun multitran-linkify (from to url)
+(defun multitran-linkify (start end url)
   "Add link to URL as `multitran-link' property."
-  (add-text-properties from to (list 'multitran-link url)))
+  (add-text-properties start end (list 'multitran-link url)))
 
 (defun multitran-link-at (&optional point)
   "Return `multitran-link' property at POINT."
   (get-text-property (or point (point)) 'multitran-link))
 
-(defun multitran--wordreference-transcription (word)
-  "Fetch WORD transcription from http://wordreference.com"
-  (and multitran-transcription
-       (with-temp-buffer
-         (url-insert-file-contents
-          (format "http://www.wordreference.com/definition/%s" word))
-         (when (re-search-forward "<span id='pronWR' [^>]*>\\([^<]*\\)</span>" nil t)
-           (match-string 1)))))
+(defun miltitran--hf-word ()
+  (let ((word (or multitran-current-word "UNKNOWN")))
+    (concat "Word: " (propertize word 'face 'bold))))
+
+(defun multitran--hf-languages ()
+  (let ((lang1 (car multitran-languages))
+        (lang2 (cdr multitran-languages)))
+    (format "%s %c %s" lang1 #x21c4 lang2)))
+
+(defun multitran--hf-history ()
+  (format "History point: %d/%d"
+          multitran-history-index (length multitran-history)))
 
 (defun multitran--insert-header ()
   "Insert multitran header."
-  (let ((transcription (multitran--wordreference-transcription multitran-current-word)))
-    (message "WORD: %s // %s" multitran-current-word transcription)
-    (mapcar* #'multitran-insert
-             (list "Word: " (or multitran-current-word "UNKNOWN")
-                   (if transcription (concat " " transcription) "")
-                   (format ", %s %c %s" (car multitran-languages) #x21c4
-                           (cdr multitran-languages))
-                   (format ", History point: %d/%d"
-                           multitran-history-index (length multitran-history)))
-             (list '(multitran-header-face)
-                   '(multitran-header-face bold)
-                   '(multitran-header-face)
-                   '(multitran-header-face)
-                   '(multitran-header-face)))
-    (insert "\n")))
+  (multitran-insert
+   (concat (mapconcat
+            #'identity (remove-if-not
+                        #'stringp (mapcar #'funcall multitran-header-formatters)) ", ")
+           "\n")
+   'multitran-header-face))
 
 (defun multitran-mode (&optional word)
   "Major mode for browsing multitran output.
@@ -263,26 +269,191 @@ Bindings:
   ;; Finally run hooks
   (run-hooks 'multitran-mode-hook))
 
-(defun multitran--proc-section (start end)
-  (save-restriction
-    (narrow-to-region start end)
-    (goto-char (point-min))
+(defmacro with-multitran-region (start end &rest body)
+  (let ((bufcontent (gensym)))
+    `(let ((,bufcontent (buffer-substring ,start ,end)))
+       (with-temp-buffer
+         (insert ,bufcontent)
+         (goto-char (point-min))
+         ,@body))))
+  ;; `(save-restriction
+  ;;    (narrow-to-region start end)
+  ;;    (goto-char (point-min))
+  ;;    ,@body))
+(put 'with-multitran-region 'lisp-indent-function 2)
 
-    ;; TODO:
-    ;;  * cleanup section
-    ;;  * extract transcription
-    ;;  * create links
-    ;;  * mark it with multitran-section-face
-    ))
+(defun multitran--parse-tag (tagname face)
+  "Parse <em> tags."
+  (save-excursion
+    (while (search-forward (concat "<" tagname ">") nil t)
+      (replace-match "" nil nil)
+      (let ((cpont (point)))
+        (search-forward (concat "</" tagname ">") nil t)
+        (replace-match "" nil nil)
+        (multitran-faceify cpont (point) face)))))
 
-(defun multitran--proc-output (url)
-  "Process html contents."
-  (goto-char (point-min))
-  (let ((found nil))
+(defun multitran--parse-em ()
+  (multitran--parse-tag "em" 'italic))
+
+(defun multitran--parse-i ()
+  (multitran--parse-tag "i" 'italic))
+
+(defun multitran--parse-with-replace (what to)
+  (save-excursion
+    (while (search-forward what nil t)
+      (replace-match to nil nil))))
+
+(defun multitran--parse-nbsp ()
+  (multitran--parse-with-replace "&nbsp;" " "))
+
+(defun multitran--parse-amp ()
+  (multitran--parse-with-replace "&amp;" " "))
+
+(defun multitran--parse-span-small ()
+  (save-excursion
+    (while (search-forward "<span class=\"small\">" nil t)
+      (replace-match "" nil nil)
+      (let ((cpont (point)))
+        (search-forward "</span>" nil t)
+        (replace-match "" nil nil)
+        (multitran-faceify cpont (point) 'subscript)))))
+
+(defun multitran--parse-span-gray ()
+  (save-excursion
+    (while (search-forward "<span style=\"color:gray\">" nil t)
+      (replace-match "" nil nil)
+      (let ((cpont (point)))
+        (search-forward "</span>" nil t)
+        (replace-match "" nil nil)))))
+  
+(defun multitran--parse-links ()
+  ;; <a href=" -> insert 'multitran-link prop
+  (save-excursion
+    (while (re-search-forward "<a [^>]*href=[\"']\\([^<>]*\\)[\"']>" nil t)
+      (let ((urlstr (match-string 1))
+            cpont)
+
+        (replace-match "" nil nil)
+        (setq cpont (point))
+
+        (re-search-forward "</[aA]>" nil t)
+        (replace-match "" nil nil)
+        
+        ;; Fix URL-STR
+        (setq urlstr (replace-regexp-in-string "&[aA][mM][pP][;]" "&" urlstr))
+
+        (multitran-linkify cpont (point) urlstr)
+        (multitran-faceify cpont (point) 'multitran-link-face)))))
+  
+(defun multitran--parse-section-title (start end)
+  "Extract section's title."
+  (with-multitran-region start end
+    ;; Remove garbage links to webster, phrases, etc
     (save-excursion
-      (when (re-search-forward "<table width=\"100%\">\n")
-        (delete-region (point-min) (point)))
-      )))
+      (when (search-forward "<span style=\"color:gray\">|</span>" nil t)
+        (delete-region (match-beginning 0) (point-max))))
+
+    (multitran--parse-links)
+    (multitran--parse-span-gray)
+;    (multitran--parse-span-small)
+    (multitran--parse-em)
+
+    (concat (buffer-string) "\n")))
+
+(defconst multitran--section-start "<tr><td colspan=\"2\" class=\"gray\">&nbsp;")
+
+(defun multitran--parse-subj (start end)
+  (with-multitran-region start end
+    (multitran--parse-links)
+    (buffer-string)))
+
+(defun multitran--parse-trans (start end)
+  (with-multitran-region start end
+    (multitran--parse-links)
+    (multitran--parse-span-gray)
+    (multitran--parse-nbsp)
+    (multitran--parse-amp)
+    (multitran--parse-i)
+    (buffer-string)))
+
+(defun multitran--parse-section (start end)
+  "Return parsed section.
+First element is parsed title, rest elements are in form
+\(SUBJ . TRANS\)"
+  (let ((sh-start (search-forward "<tr><td colspan=\"2\" class=\"gray\">&nbsp;" end))
+        (sec-start (search-forward "</td></tr>" end))
+        (sh-end (match-beginning 0))
+        section-title subjs-trans)
+
+    (setq section-title (multitran--parse-section-title sh-start sh-end))
+
+    ;; Parse subjects and translations
+    (with-multitran-region sec-start end
+      (while (search-forward "<tr><td class=\"subj\" width=\"1\">" nil t)
+        (let ((subj-start (point))
+              (trans-start (search-forward "</td>\n<td class=\"trans\" width=\"100%\">"))
+              (subj-end (match-beginning 0))
+              (trans-end (and (search-forward "</td></tr>") (match-beginning 0))))
+          (push (cons (multitran--parse-subj subj-start subj-end)
+                      (multitran--parse-trans trans-start trans-end))
+                subjs-trans)
+          )))
+
+    (cons section-title (nreverse subjs-trans))))
+
+(defun multitran--parse-html ()
+  "Process html contents and return list of sections."
+  (goto-char (point-min))
+  (let ((start (search-forward "<table width=\"100%\">\n"))
+        (end (search-forward "</table>"))
+        section-points sections)
+    ;; Extract all sections
+    (goto-char start)
+    (while (search-forward "<tr><td colspan=\"2\" class=\"gray\">&nbsp;" end t)
+      (push (match-beginning 0) section-points))
+    (push end section-points)
+
+    (while (cdr section-points)
+      (let ((s-end (car section-points))
+            (s-start (cadr section-points)))
+        (goto-char s-start)
+        (push (multitran--parse-section s-start s-end) sections)
+        (setq section-points (cdr section-points))))
+
+    sections))
+
+(defun multitran--string-to-rectangle (string column &optional justify)
+  "Split STRING to insertable rectangle by COLUMN.
+Make optional justification by JUSTIFY parameter."
+  (with-temp-buffer
+    (insert string)
+    (let ((fill-column column)
+          buffer-lines)
+      (fill-paragraph justify)
+      (goto-char (point-min))
+      (while (< (point) (point-max))
+        (push (buffer-substring (point-at-bol) (point-at-eol))
+              buffer-lines)
+        (forward-line 1))
+      (nreverse buffer-lines))))
+
+(defun multitran--insert-section (section subjlen)
+  "Insert parsed SECTION with calculated maximum subject length SUBJLEN."
+  (multitran-insert (car section) 'multitran-section-face)
+
+  (dolist (subj-trans (cdr section))
+    (let ((subj (car subj-trans))
+          (trans (cdr subj-trans)))
+      ;; Insert subj rightpadding with spaces
+      (insert subj)
+      (insert (make-string (- subjlen (length subj)) 32))
+
+      ;; Insert translation
+      (insert-rectangle
+       (multitran--string-to-rectangle
+        trans (- multitran-fill-column subjlen) multitran-justify-translate))
+
+       (insert "\n"))))
 
 (defun multitran--url (url &optional word)
   "Fetch and view multitran URL."
@@ -297,8 +468,14 @@ Bindings:
       (erase-buffer)
 
       (url-insert-file-contents url)
-;      (multitran--fetch-url url)
-      (multitran--proc-output url)
+      (let* ((sections (multitran--parse-html))
+             (subjects (mapcar #'car (apply #'append (mapcar #'cdr sections))))
+             (subjlen (+ multitran-subject-padding
+                         (apply #'max (mapcar #'length subjects)))))
+        (erase-buffer)
+
+        (dolist (section sections)
+          (multitran--insert-section section subjlen)))
 
       ;; Save into history
       (multitran--history-push word url cur-buf)
