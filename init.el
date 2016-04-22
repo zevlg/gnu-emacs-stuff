@@ -13,6 +13,7 @@
 (push "~/.emacs.d/lisp" load-path)
 (push "~/.emacs.d/thirdparty" load-path)
 (push "~/dev/gnu-emacs-stuff" load-path)
+(push "~/dev/emacs-stuff" load-path)
 (push "/usr/share/emacs24/site-lisp/git" load-path)
 (autoload 'git-status "git" "git-status" t)
 (load-library "xemacs-theme-source-code")
@@ -197,6 +198,29 @@ If ARG is non-nil delete region, otherwise kill."
 (set-face-background 'whitespace-tab "yellow")
 (set-face-background 'whitespace-space "LightBlue1")
 (set-face-background 'whitespace-indentation "skyblue")
+
+;;}}}
+
+;;{{{ `-- Multitran
+
+;;; Interface to multitran.com
+;;
+;; https://raw.githubusercontent.com/zevlg/gnu-emacs-stuff/master/multitran.el
+;; https://raw.githubusercontent.com/zevlg/emacs-stuff/master/wordfreq.el
+(autoload 'multitran "multitran" nil t)
+(autoload 'wordfreq-find "wordfreq" nil t)
+
+(defun lg-multitran--hf-wordfreq ()
+  "Show word's frequency rank."
+  (let ((wfreq (wordfreq-find multitran-current-word)))
+    (and wfreq (format "FRank: %S" (cadr wfreq)))))
+
+(setq multitran-header-formatters
+      '(miltitran--hf-word multitran--hf-languages
+                           lg-multitran--hf-wordfreq multitran--hf-history))
+
+(define-key global-map (kbd "C-c d r") 'multitran)
+(define-key global-map (kbd "C-c d r") 'multitran)
 
 ;;}}}
 
@@ -757,8 +781,8 @@ If prefix ARG is specified, then replace region with the evaluation result."
 ;;{{{ `-- Editing commands
 
 ;; C-cd Prefix for DICT
-(define-key global-map (kbd "C-c d d") 'dict)
-(define-key global-map (kbd "C-c d r") 'rdict)
+(define-key global-map (kbd "C-c d d") 'multitran)
+(define-key global-map (kbd "C-c d r") 'multitran)
 (define-key global-map (kbd "C-c d t") 'google-translate-region)
 
 (defun lg-py-shell ()
