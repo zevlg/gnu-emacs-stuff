@@ -474,8 +474,9 @@ Make optional justification by JUSTIFY parameter."
                          (apply #'max (mapcar #'length subjects)))))
         (erase-buffer)
 
-        (dolist (section sections)
-          (multitran--insert-section section subjlen)))
+        (save-excursion
+          (dolist (section sections)
+            (multitran--insert-section section subjlen))))
 
       ;; Save into history
       (multitran--history-push word url cur-buf)

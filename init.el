@@ -13,6 +13,7 @@
 (push "~/.emacs.d/lisp" load-path)
 (push "~/.emacs.d/thirdparty" load-path)
 (push "~/dev/gnu-emacs-stuff" load-path)
+(push "~/dev/emacs-stuff" load-path)
 (push "/usr/share/emacs24/site-lisp/git" load-path)
 (autoload 'git-status "git" "git-status" t)
 (load-library "xemacs-theme-source-code")
@@ -152,6 +153,8 @@ bottom of the buffer stack."
 
 ;; Kill \n also if killing from the begining of line
 (setq kill-whole-line t)
+;; remember everything you kill
+(setq kill-ring-max 1000)
 
 ;; NOTE: With negative prefix arg `kill-line' will kill lines backward!
 (defun lg-kill-line (&optional arg)
@@ -195,6 +198,29 @@ If ARG is non-nil delete region, otherwise kill."
 (set-face-background 'whitespace-tab "yellow")
 (set-face-background 'whitespace-space "LightBlue1")
 (set-face-background 'whitespace-indentation "skyblue")
+
+;;}}}
+
+;;{{{ `-- Multitran
+
+;;; Interface to multitran.com
+;;
+;; https://raw.githubusercontent.com/zevlg/gnu-emacs-stuff/master/multitran.el
+;; https://raw.githubusercontent.com/zevlg/emacs-stuff/master/wordfreq.el
+(autoload 'multitran "multitran" nil t)
+(autoload 'wordfreq-find "wordfreq" nil t)
+
+(defun lg-multitran--hf-wordfreq ()
+  "Show word's frequency rank."
+  (let ((wfreq (wordfreq-find multitran-current-word)))
+    (and wfreq (format "FRank: %S" (cadr wfreq)))))
+
+(setq multitran-header-formatters
+      '(miltitran--hf-word multitran--hf-languages
+                           lg-multitran--hf-wordfreq multitran--hf-history))
+
+(define-key global-map (kbd "C-c d r") 'multitran)
+(define-key global-map (kbd "C-c d r") 'multitran)
 
 ;;}}}
 
@@ -755,8 +781,8 @@ If prefix ARG is specified, then replace region with the evaluation result."
 ;;{{{ `-- Editing commands
 
 ;; C-cd Prefix for DICT
-(define-key global-map (kbd "C-c d d") 'dict)
-(define-key global-map (kbd "C-c d r") 'rdict)
+(define-key global-map (kbd "C-c d d") 'multitran)
+(define-key global-map (kbd "C-c d r") 'multitran)
 (define-key global-map (kbd "C-c d t") 'google-translate-region)
 
 (defun lg-py-shell ()
@@ -1030,45 +1056,18 @@ auto-insert-alist)
 (require 'gnus)
 
 (setq gnus-novice-user nil)
-(setq smtpmail-smtp-user "e.zajcev@corp.mail.ru")
-
-(setq gnus-secondary-select-methods
-      '((nnimap "Mail.ru"
-                (nnimap-inbox "INBOX")
-                (nnimap-server-port 993)
-                (nnimap-address "imap.mail.ru")
-                (nnimap-stream ssl)
-                (nnimap-inbox "INBOX")
-                (nnimap-split-methods
-                 (("JIRA" "^From.*tasks@jira\\.mail\\.ru")
-                  ("target-team" "^Sender:.*target-team[^@]*@ml.corp.mail.ru")
-                  ("sentry" "^X-Sentry-Server")
-                  ("gitlab" "^X-GitLab-Project")
-                  ("unknown" "")))
-                )))
-
-(setq gnus-select-method (car gnus-secondary-select-methods))
 
 (setq gnus-logo-color-style 'purp)
 (setq gnus-logo-colors
       (cdr (assq gnus-logo-color-style gnus-logo-color-alist)))
 
 (setq user-full-name "Zajcev Evgeny")
-(setq user-mail-address "e.zajcev@corp.mail.ru")
 
 ;; Allow '/' in group names
 (setq gnus-invalid-group-regexp "[: `'\"]\\|^$")
 
 
-(setq gnus-message-archive-method "nnimap:Mail.ru")
 (setq gnus-message-archive-group "Отправленные")
-
-(setq gnus-posting-styles
-      '((".*"
-         (name "Zajcev Evgeny")
-         (address "e.zajcev@corp.mail.ru")
-         (signature "lg"))
-        ))
 
 (setq gnus-summary-line-format
       (concat
@@ -1269,6 +1268,14 @@ auto-insert-alist)
 ;;; C-mode
 (push (cons 'c-mode "bsd") c-default-style)
 
+;;; Haskell mode
+;; git clone https://github.com/haskell/haskell-mode.git
+;; cd haskell-mode && make
+(push "~/.emacs.d/thirdparty/haskell-mode" load-path)
+(require 'haskell-mode-autoloads)
+
+(define-key global-map (kbd "C-c d h") 'haskell-interactive-switch)
+
 ;; ERC
 (setq erc-track-enable-keybindings nil)
 
@@ -1280,17 +1287,6 @@ auto-insert-alist)
   (load-library "exwmrc"))
 
 ;;;;; MAIL.RU stuff
-
-;;; Jenkins
-(push "~/.emacs.d/thirdparty/jenkins" load-path)
-(autoload 'jenkins "jenkins" "Jenkins CI" t)
-
-(setq jenkins-api-token "ca89eacf6d63db3d95408de4d51c1d3a")
-(setq jenkins-url "http://jenkins.trgqa.devmail.ru:80/")
-(setq jenkins-username "e.zajcev")
-(setq jenkins-viewname "target")
-
-(setq jenkins-colwidth-name 35)
 
 ;; Commit messages to git
 (defun lg-git-ticket-name ()
@@ -1308,7 +1304,7 @@ auto-insert-alist)
 (defun lg-add-trg-label ()
   "Insert JIRA ticket name into commit message."
   (let ((ticket (lg-git-ticket-name)))
-    (unless (string-empty-p ticket)
+    (unless (string-equal ticket "")
       (insert "\n")
       (insert ticket)
       (insert ": "))))
