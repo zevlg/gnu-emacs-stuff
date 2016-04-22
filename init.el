@@ -8,7 +8,6 @@
 ;;             '("elpy" . "https://jorgenschaefer.github.io/packages/"))
 
 (package-initialize)
-(server-start)
 
 (push "~/.emacs.d/lisp" load-path)
 (push "~/.emacs.d/thirdparty" load-path)
@@ -219,7 +218,7 @@ If ARG is non-nil delete region, otherwise kill."
       '(miltitran--hf-word multitran--hf-languages
                            lg-multitran--hf-wordfreq multitran--hf-history))
 
-(define-key global-map (kbd "C-c d r") 'multitran)
+(define-key global-map (kbd "C-c d d") 'multitran)
 (define-key global-map (kbd "C-c d r") 'multitran)
 
 ;;}}}
@@ -430,7 +429,17 @@ CSTR can contain special escape sequences:
 
 ;;}}}
 
-;;{{{   `-- C-cf - Prefix for Finding commands
+;;{{{ `-- Server
+
+(server-start)
+
+;; Bold-ify/red-ify "Server"
+(let ((sspec (assq 'server-buffer-clients minor-mode-alist)))
+  (setcdr sspec (list (propertize " Server" 'face 'error))))
+
+;;}}}
+
+;;{{{ `-- C-cf - Prefix for Finding commands
 
 (autoload 'copy-from-above-command "misc" "Copy line from the above" t)
 
@@ -1252,16 +1261,6 @@ auto-insert-alist)
         ))
 
 (define-key global-map (kbd "C-c w j") 'webjump)
-
-(defun multitran ()
-  "Jump to multitran"
-  (interactive)
-  (browse-url (webjump-url-fix (destructuring-bind (name . expr)
-                                   (assoc-string "MultiTran" webjump-sites t)
-                                 (webjump-builtin expr name)))))
-
-(define-key global-map (kbd "C-c d d") 'multitran)
-(define-key global-map (kbd "C-c d r") 'multitran)
 
 ;;}}}
 
