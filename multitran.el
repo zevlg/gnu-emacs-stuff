@@ -4,7 +4,8 @@
 
 ;; Author: Zajcev Evgeny <zevlg@yandex.ru>
 ;; Created: Wed Apr 13 01:00:05 2016
-;; Keywords:
+;; Keywords: dictionary, hypermedia
+;; Version: 0.2
 
 ;; This file is part of GNU Emacs.
 
@@ -22,9 +23,50 @@
 ;; along with GNU Emacs.  If not, see <http://www.gnu.org/licenses/>.
 
 ;;; Commentary:
-
+;; 
+;; Multitran is 0-dependance Emacs interface to http://multitran.com
+;; online dictionary.
 ;;
-
+;; Multitran supports *tons* of languages, including such languages
+;; as: Esperanto, Latin and Luxembourgish.  See http://multitran.com
+;; for full list and feel free to add new languages to
+;; `multitran-languages-map' if you missing one.
+;;
+;; Variables to customize:
+;; ~~~~~~~~~~~~~~~~~~~~~~
+;;
+;; * `multitran-languages' - Pair of languages for translation,
+;;   available languages are:
+;; 
+;; * `multitran-header-formatters' - Header line formatters
+;;   You might want to add your custom formatters, like:
+;; 
+;;    (defun my-multitran--hf-wordfreq ()
+;;      "Show word's frequency rank."
+;;      (let ((wfreq (wordfreq-find (or multitran-word ""))))
+;;        (and wfreq (format "FRank: %S" (cadr wfreq)))))
+;;
+;;    (setq multitran-header-formatters
+;;          '(miltitran--hf-word multitran--hf-languages
+;;            my-multitran--hf-wordfreq multitran--hf-history))
+;;
+;;   Where `wordfreq-find' is from
+;;   https://raw.githubusercontent.com/zevlg/emacs-stuff/master/wordfreq.el
+;; 
+;; * `multitran-mode-hook' - hook is run after entering multitran-mode
+;; 
+;;; History:
+;;  ~~~~~~~
+;; 
+;; Version 0.2:
+;;   - Support for header-line-format
+;;   - Support for suggestions
+;;   - Many languages added
+;; 
+;; Version 0.1:
+;;   - Base port of some rdict functionality
+;;   - html parsers
+;; 
 ;;; Code:
 
 (require 'url)
@@ -44,6 +86,14 @@
 (defcustom multitran-header-formatters
   '(miltitran--hf-word multitran--hf-languages multitran--hf-history)
   "*List of format functions to compose multitran header."
+  :type 'list
+  :group 'multitran)
+
+(defcustom multitran-header-line-format
+  '(" " (:eval (multitran--header-line)))
+  "*Mode-line-format for multitran buffer.
+If non-nil then header is used to display multitran header.
+Otherwise header is inserted as plain text on top of multitran buffer."
   :type 'list
   :group 'multitran)
 
@@ -74,11 +124,6 @@ Order does not matter."
   :type 'number
   :group 'multitran)
 
-(defcustom multitran-margin-offset 2
-  "*Margin offset to use for different text levels."
-  :type 'number
-  :group 'multitran)
-
 (defcustom multitran-dir (expand-file-name "~/.multitran")
   "*Directory where multitran stores its files."
   :type 'directory
@@ -103,18 +148,19 @@ Order does not matter."
     (define-key map (kbd "BS") 'scroll-down)
 
     (define-key map (kbd "q") 'quit-window)
-    (define-key map (kbd "]") 'multitran-next)
-    (define-key map (kbd "[") 'multitran-prev)
+    (define-key map (kbd "]") 'multitran-next-section)
+    (define-key map (kbd "[") 'multitran-prev-section)
     (define-key map (kbd "TAB") 'multitran-next-link)
+    (define-key map (kbd "<backtab>") 'multitran-prev-link)
     (define-key map (kbd "RET") 'multitran-follow-link)
     (define-key map (kbd "w") 'multitran)
 
     ;; History navigation
-    (define-key map (kbd "h n") 'multitran-hist-next)
-    (define-key map (kbd "h p") 'multitran-hist-prev)
-    (define-key map (kbd "h >") 'multitran-hist-last)
-    (define-key map (kbd "h <") 'multitran-hist-first)
-    (define-key map (kbd "h l") 'multitran-hist-list)
+    (define-key map (kbd "h n") 'multitran-history-next)
+    (define-key map (kbd "h p") 'multitran-history-prev)
+    (define-key map (kbd "h >") 'multitran-history-last)
+    (define-key map (kbd "h <") 'multitran-history-first)
+    (define-key map (kbd "h l") 'multitran-history-list)
 
     ;; Vocabulary
     (define-key map (kbd "v p") 'multitran-vocab-put)
@@ -128,15 +174,40 @@ Order does not matter."
   "Nth element in `multitran-history' we currently active.")
 
 (defvar multitran-read-history nil "History for `read-string'.")
-(defvar multitran-current-word "" "Currently translated word.")
+(defvar multitran-word "" "Currently translated word.")
 (defvar multitran-saved-window-condition nil)
 
 (defconst multitran-url "http://multitran.com"
   "URL to use in order to search for words.")
 
 (defconst multitran-languages-map
-  '(("en" . "1") ("ru" . "2") ("de" . "3")
-    ("fr" . "4") ("es" . "5") ("it" . "23")))
+  '(("ab" "Abkhazian" "71")
+    ("ag" "Adyghe" "72")
+    ("af" "Afrikaans" "31")
+    ("al" "Albanian" "47")
+    ("cn" "Chinese" "17")
+    ("cn2" "Chinese Taiwan" "98")
+    ("cn3" "Chinese simplified" "97")
+    ("cs" "Czech" "16")
+    ("en" "English" "1")
+    ("eo" "Esperanto" "34")
+    ("de" "German" "3")
+    ("el" "Greek" "38")
+    ("fi" "Finnish" "36")
+    ("fr" "French" "4")
+    ("ga" "Irish" "49")
+    ("it" "Italian" "23")
+    ("la" "Latin" "37")
+    ("jp" "Japanese" "28")
+    ("ko" "Korean" "39")
+    ("pt" "Portuguese" "11")
+    ("ru" "Russian" "2")
+    ("sv" "Swedish" "29")
+    ("sk" "Slovak" "60")
+    ("sl" "Slovenian" "67")
+    ("es" "Spanish" "5")
+    ("ua" "Ukranian" "33")
+    ))
 
 (defface multitran-gray-face
   '((((class grayscale) (background light))
@@ -149,19 +220,6 @@ Order does not matter."
      (:foreground "gray"))
     (t (:weight bold :underline t)))
   "Face for gray text."
-  :group 'multitran)
-
-(defface multitran-abbrev-face
-  '((((class grayscale) (background light))
-     (:background "Gray90" :italic t))
-    (((class grayscale) (background dark))
-     (:foreground "Gray80" :italic t))
-    (((class color) (background light))
-     (:foreground "brown" :italic t))
-    (((class color) (background dark))
-     (:foreground "brown4" :italic t))
-    (t (:bold t :underline t)))
-  "Font lock faces used to highlight abbrevs"
   :group 'multitran)
 
 (defface multitran-link-face
@@ -203,7 +261,7 @@ Order does not matter."
   :group 'multitran)
 
 (defsubst multitran-lang-code (lang)
-  (cdr (assoc (or lang multitran-language) multitran-languages-map)))
+  (caddr (assoc (or lang multitran-language) multitran-languages-map)))
 
 (defun multitran-faceify (start end faces)
   (add-face-text-property start end faces))
@@ -211,6 +269,13 @@ Order does not matter."
 (defun multitran-insert (text faces)
   (add-face-text-property 0 (length text) faces t text)
   (insert text))
+
+(defun multitran--face-at-point-p (face &optional point)
+  "Return non-nil if there is FACE in faces list at POINT."
+  (let ((cface (get-text-property (or point (point)) 'face)))
+    (or (eq cface 'multitran-section-face)
+        (and (listp cface)
+             (memq 'multitran-section-face cface)))))
 
 (defun multitran-linkify (start end url)
   "Add link to URL as `multitran-link' property."
@@ -221,7 +286,7 @@ Order does not matter."
   (get-text-property (or point (point)) 'multitran-link))
 
 (defun miltitran--hf-word ()
-  (let ((word (or multitran-current-word "UNKNOWN")))
+  (let ((word (or multitran-word "UNKNOWN")))
     (concat "Word: " (propertize word 'face 'bold))))
 
 (defun multitran--hf-languages ()
@@ -230,41 +295,30 @@ Order does not matter."
     (format "%s %c %s" lang1 #x21c4 lang2)))
 
 (defun multitran--hf-history ()
-  (format "History point: %d/%d"
+  (format "History: %d/%d"
           multitran-history-index (length multitran-history)))
 
-(defun multitran--insert-header ()
-  "Insert multitran header."
-  (multitran-insert
-   (concat (mapconcat
-            #'identity (remove-if-not
-                        #'stringp (mapcar #'funcall multitran-header-formatters)) ", ")
-           "\n")
-   'multitran-header-face))
+(defun multitran--header-line ()
+  "Return contents for header line."
+  (mapconcat
+   #'identity (remove-if-not
+               #'stringp (mapcar #'funcall multitran-header-formatters))
+   ", "))
 
-(defun multitran-mode (&optional word)
+(defun multitran-mode ()
   "Major mode for browsing multitran output.
 
 Bindings:
 \\{multitran-mode-map}"
   (interactive)
 
-  (setq multitran-current-word word)
-
-  ;; Insert multitran header
-  (save-excursion
-    (goto-char (point-min))
-    (multitran--insert-header))
-
   (use-local-map multitran-mode-map)
   (setq major-mode 'multitran-mode
-	mode-name "multitran"
-	buffer-read-only t)
-  (set-buffer-modified-p nil)
+        mode-name "multitran"
+        buffer-read-only t
+        header-line-format multitran-header-line-format)
 
-  ;; Remove duplicable extents, they were needed for history.
-  ;; (map-extents #'(lambda (ex &rest skip)
-  ;;                  (set-extent-property ex 'duplicable nil)))
+  (set-buffer-modified-p nil)
 
   ;; Finally run hooks
   (run-hooks 'multitran-mode-hook))
@@ -276,10 +330,6 @@ Bindings:
          (insert ,bufcontent)
          (goto-char (point-min))
          ,@body))))
-  ;; `(save-restriction
-  ;;    (narrow-to-region start end)
-  ;;    (goto-char (point-min))
-  ;;    ,@body))
 (put 'with-multitran-region 'lisp-indent-function 2)
 
 (defun multitran--parse-tag (tagname face)
@@ -318,15 +368,15 @@ Bindings:
         (replace-match "" nil nil)
         (multitran-faceify cpont (point) 'subscript)))))
 
-(defun multitran--parse-span-gray ()
+(defun multitran--parse-span-gray (&optional rep1 rep2)
   (save-excursion
     (while (search-forward "<span style=\"color:gray\">" nil t)
-      (replace-match "" nil nil)
+      (replace-match (or rep1 "") nil nil)
       (let ((cpont (point)))
         (search-forward "</span>" nil t)
-        (replace-match "" nil nil)))))
-  
-(defun multitran--parse-links ()
+        (replace-match (or rep2 "") nil nil)))))
+
+(defun multitran--parse-links (&optional no-props)
   ;; <a href=" -> insert 'multitran-link prop
   (save-excursion
     (while (re-search-forward "<a [^>]*href=[\"']\\([^<>]*\\)[\"']>" nil t)
@@ -338,13 +388,14 @@ Bindings:
 
         (re-search-forward "</[aA]>" nil t)
         (replace-match "" nil nil)
-        
+
         ;; Fix URL-STR
         (setq urlstr (replace-regexp-in-string "&[aA][mM][pP][;]" "&" urlstr))
 
-        (multitran-linkify cpont (point) urlstr)
-        (multitran-faceify cpont (point) 'multitran-link-face)))))
-  
+        (unless no-props
+          (multitran-linkify cpont (point) urlstr)
+          (multitran-faceify cpont (point) 'multitran-link-face))))))
+
 (defun multitran--parse-section-title (start end)
   "Extract section's title."
   (with-multitran-region start end
@@ -354,8 +405,7 @@ Bindings:
         (delete-region (match-beginning 0) (point-max))))
 
     (multitran--parse-links)
-    (multitran--parse-span-gray)
-;    (multitran--parse-span-small)
+    (multitran--parse-span-gray "/" "/")
     (multitran--parse-em)
 
     (concat (buffer-string) "\n")))
@@ -364,7 +414,7 @@ Bindings:
 
 (defun multitran--parse-subj (start end)
   (with-multitran-region start end
-    (multitran--parse-links)
+    (multitran--parse-links :no-linkfy-and-facefy)
     (buffer-string)))
 
 (defun multitran--parse-trans (start end)
@@ -455,34 +505,55 @@ Make optional justification by JUSTIFY parameter."
 
        (insert "\n"))))
 
-(defun multitran--url (url &optional word)
+(defun multitran--try-parse-translation ()
+  (let* ((sections (multitran--parse-html))
+         (subjects (mapcar #'car (apply #'append (mapcar #'cdr sections))))
+         (subjlen (+ multitran-subject-padding
+                     (apply #'max (mapcar #'length subjects)))))
+    (erase-buffer)
+
+    (save-excursion
+      (dolist (section sections)
+        (multitran--insert-section section subjlen)))))
+
+(defun multitran--try-parse-suggest ()
+  (when (re-search-forward "Suggest: <a href=[^<]+</a>")
+    (let ((start (match-beginning 0))
+          (end (point)))
+      (delete-region end (point-max))
+      (delete-region (point-min) start))
+    (goto-char (point-min))
+    (multitran--parse-links)
+
+    ;; Jump to suggestion link
+    (multitran-next-link)))
+
+(defun multitran--url (url)
   "Fetch and view multitran URL."
-  (let ((cur-buf (current-buffer)) buf)
+  (let ((cur-buf (current-buffer)))
     (unless (eq major-mode 'multitran-mode)
       (setq multitran-window-condition (current-window-configuration)))
 
-    (setq buf (get-buffer-create "*multitran*"))
-    (save-excursion
-      (set-buffer buf)
+    (with-current-buffer (get-buffer-create "*multitran*")
       (setq buffer-read-only nil)
       (erase-buffer)
 
-      (url-insert-file-contents url)
-      (let* ((sections (multitran--parse-html))
-             (subjects (mapcar #'car (apply #'append (mapcar #'cdr sections))))
-             (subjlen (+ multitran-subject-padding
-                         (apply #'max (mapcar #'length subjects)))))
-        (erase-buffer)
+      ;; Extract word from the url
+      (when (string-match "s=\\([^&]+\\)" url)
+        (setq multitran-word (match-string 1 url)))
 
-        (save-excursion
-          (dolist (section sections)
-            (multitran--insert-section section subjlen))))
+      ;; Fetch/process html
+      (url-insert-file-contents url)
+      (condition-case nil
+          (multitran--try-parse-translation)
+        (error
+         (multitran--try-parse-suggest)))
 
       ;; Save into history
-      (multitran--history-push word url cur-buf)
+      (multitran--history-push multitran-word url cur-buf)
 
-      (multitran-mode word))
-    buf))
+      (multitran-mode)
+      (current-buffer))))
 
 (defun multitran--word (word)
   (let ((url (format "%s/m.exe?s=%s&l1=%s&l2=%s"
@@ -490,7 +561,7 @@ Make optional justification by JUSTIFY parameter."
                      (multitran-lang-code (car multitran-languages))
                      (multitran-lang-code (cdr multitran-languages)))))
 
-    (pop-to-buffer (multitran--url url word))))
+    (pop-to-buffer (multitran--url url))))
 
 ;;;###autoload
 (defun multitran (word &optional lang)
@@ -509,6 +580,62 @@ If prefix ARG is given, then select language."
   (multitran--word word))
 
 
+;; Navigation
+(defun multitran--goto-prev-prop (prop-name)
+  "Move point to previous property PROP-NAME."
+  ;; TODO:
+  ;; previous-single-property-change
+  )
+
+(defun multitran--goto-next-prop (prop-name)
+  "Move point to next property PROP-NAME."
+  (let ((pnt (point))
+        (orig-val (get-text-property (point) prop-name))
+        (nval nil))
+    (while (and pnt (or (null nval) (equal orig-val nval)))
+      (setq pnt (next-single-property-change pnt prop-name)
+            nval (get-text-property (or pnt (point)) prop-name)))
+    (unless pnt
+      (signal 'end-of-buffer nil))
+
+    (goto-char pnt)))
+
+(defun multitran-next-link (&optional n)
+  "Jump to next N link."
+  (interactive "p")
+  (dotimes (_ n)
+    (multitran--goto-next-prop 'multitran-link)))
+
+(defun multitran-follow-link (relative-url)
+  "Follow relative url."
+  (interactive (list (multitran-link-at)))
+
+  (when relative-url
+    (multitran--url (format "%s%s" multitran-url relative-url))))
+
+(defun multitran--goto-section (direction)
+  (let ((found nil))
+    (while (not found)
+      (if (eq direction :next)
+          (next-line)
+        (previous-line))
+      (goto-char (point-at-bol))
+
+      (setq found (multitran--face-at-point-p 'multitran-section-face)))))
+
+(defun multitran-next-section (&optional n)
+  "Jump to next N section."
+  (interactive "p")
+  (dotimes (_ n)
+    (multitran--goto-section :next)))
+
+(defun multitran-prev-section (&optional n)
+  "Jump to prev N section."
+  (interactive "p")
+  (dotimes (_ n)
+    (multitran--goto-section :prev)))
+
+
 ;; History
 (defun multitran--history-push (word &optional url buf)
   "Push WORD into multitran history."
@@ -525,10 +652,11 @@ If prefix ARG is given, then select language."
     (setq buffer-read-only nil)
     (erase-buffer)
     (insert (car hi))
-    (multitran-show-transcription)
     (goto-char (point-min))
 
-    (multitran-mode (plist-get (cdr hi) :word))))
+    (setq multitran-word (plist-get (cdr hi) :word))
+
+    (multitran-mode)))
 
 ;; If this is called we should be already in the *multitran* buffer.
 (defun multitran-history-goto (direction &optional n)

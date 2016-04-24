@@ -105,22 +105,26 @@
                             (or (null frame) (eq exwm--frame frame)))))
                  (orig-buffer-list)))
 
-;; (defun lg-ido-switch-app ()
-;;   (interactive)
-;;   (cl-flet ((buffer-list (&optional frame)
-;;              (remove-if-not #'(lambda (b)
-;;                                 (with-current-buffer b
-;;                                   (and (eq major-mode 'exwm-mode)
-;;                                        (or (null frame) (eq exwm--frame frame)))))
-;;                             (buffer-list))))
-;;     (ido-switch-buffer)))
-;; TODO
+(defun lg-ido-switch-app (buf)
+  "Switch to application."
+  (interactive
+   (list (get-buffer (ido-completing-read
+                      "X application: "
+                      (mapcar 'buffer-name (exwm--x-list '(exwm-mode))) nil t))))
+  (exwm-wconf-pop-to-buffer buf))
+
+(exwm-input-set-key (kbd "C-x b") 'ido-switch-buffer)
 (exwm-input-set-key (kbd "H-x b") 'lg-ido-switch-app)
 (exwm-input-set-key (kbd "H-:") 'eval-expression)
 (exwm-input-set-key (kbd "H-C-x") 'execute-extended-command)
 (exwm-input-set-key (kbd "H-M-x") 'execute-extended-command)
 (exwm-input-set-key (kbd "H-!") 'shell-command)
 (exwm-input-set-key (kbd "H-#") 'lg-mini-calc)
+
+(exwm-input-set-key (kbd "M-:") 'eval-expression)
+(exwm-input-set-key (kbd "H-:") 'eval-expression)
+(exwm-input-set-key (kbd "H-C-x") 'execute-extended-command)
+(exwm-input-set-key (kbd "H-M-x") 'execute-extended-command)
 
 (defun lg-exwm-start-xterm-screen ()
   (interactive)
@@ -138,10 +142,15 @@
   (interactive)
   (start-process "" nil "xlock" "-mode" "eyes"))
 
+(defun lg-exwm-start-opera ()
+  (interactive)
+  (start-process "" nil "opera"))
+
 (exwm-input-set-key (kbd "H-a X") 'lg-exwm-start-xterm-screen)
 (exwm-input-set-key (kbd "H-a x") 'lg-exwm-start-xterm)
 (exwm-input-set-key (kbd "H-a f") 'lg-exwm-start-firefox)
 (exwm-input-set-key (kbd "H-a l") 'lg-exwm-start-xlock)
+(exwm-input-set-key (kbd "H-a o") 'lg-exwm-start-opera)
 
 (defun lg-lupe-geometry ()
   (let ((dw (x-display-pixel-width)))
