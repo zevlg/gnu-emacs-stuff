@@ -878,6 +878,7 @@ If prefix ARG is specified, then replace region with the evaluation result."
 (elpy-enable)
 
 (defun lg-py-install-keys ()
+  (local-set-key (kbd "RET") 'newline-and-indent)
   (local-set-key (kbd "C-c e r") 'py-execute-region)
   (local-set-key (kbd "C-c e b") 'py-execute-buffer)
   (local-set-key (kbd "C-c e f") 'py-execute-def-or-class)
