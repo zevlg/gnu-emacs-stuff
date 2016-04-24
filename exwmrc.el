@@ -37,6 +37,9 @@
 (with-exwm-wconf-header-line
  (display-time-mode 1))
 
+;; Restore wconf on `C-x #'
+(add-hook 'server-done-hook 'exwm-wconf-restore-buffer)
+
 
 (setq exwm-manage-switch-on-maprequest
       #'(lambda (x)
@@ -189,6 +192,10 @@
 
 (exwm-input-set-key (kbd "H-f") 'exwm--forward-app)
 (exwm-input-set-key (kbd "H-b") 'exwm--backward-app)
+
+(exwm-input-set-key (kbd "H-c d") 'multitran)
+
+;;;
 
 
 (defun lg-exwm-unmanage-all ()
