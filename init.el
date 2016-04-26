@@ -211,12 +211,18 @@ If ARG is non-nil delete region, otherwise kill."
 
 (defun lg-multitran--hf-wordfreq ()
   "Show word's frequency rank."
-  (let ((wfreq (wordfreq-find multitran-word)))
+  (let ((wfreq (wordfreq-find (or multitran-word ""))))
     (and wfreq (format "FRank: %S" (cadr wfreq)))))
 
 (setq multitran-header-formatters
       '(miltitran--hf-word multitran--hf-languages
                            lg-multitran--hf-wordfreq multitran--hf-history))
+
+(defun lg-multitran-hook ()
+  (face-remap-add-relative
+   'header-line `((:height ,(face-attribute 'default :height)) header-line)))
+
+(add-hook 'multitran-mode-hook 'lg-multitran-hook)
 
 (define-key global-map (kbd "C-c d d") 'multitran)
 (define-key global-map (kbd "C-c d r") 'multitran)
@@ -437,6 +443,27 @@ CSTR can contain special escape sequences:
 ;; Bold-ify/red-ify "Server"
 (let ((sspec (assq 'server-buffer-clients minor-mode-alist)))
   (setcdr sspec (list (propertize " Server" 'face 'error))))
+
+;;}}}
+
+;;{{{   `-- C-o - Prefix for -other- commands
+
+;; Make C-o to be keymap for othering
+(define-key global-map (kbd "C-O") 'open-line)
+
+(define-key global-map (kbd "C-o") nil)
+(define-key global-map (kbd "C-o 0") 'lg-kill-buffer-and-window)
+(define-key global-map (kbd "C-o C-f") 'find-file-other-window)
+(define-key global-map (kbd "C-o v") 'find-variable-other-window)
+(define-key global-map (kbd "C-o f") 'find-function-other-window)
+(define-key global-map (kbd "C-o l") 'find-library-other-window)
+(define-key global-map (kbd "C-o t") 'find-tag-other-window)
+(define-key global-map (kbd "C-o b") 'ido-switch-buffer-other-window)
+(define-key global-map (kbd "C-o a") 'add-change-log-entry-other-window)
+(define-key global-map (kbd "C-o d") 'dired-other-window)
+(define-key global-map (kbd "C-o C-o") 'iswitchb-display-buffer)
+(define-key global-map (kbd "C-o M-C-l") 'lg-switch-to-other-other-window)
+(define-key global-map (kbd "C-o k") 'lg-kill-buffer-in-other-window)
 
 ;;}}}
 
