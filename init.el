@@ -961,8 +961,42 @@ If prefix ARG is specified, then replace region with the evaluation result."
 (setq sudoku-autoinsert-mode t)
 (add-hook 'sudoku-after-change-hook 'sudoku-autoinsert)
 
-;;; Version control
+;;; Version Control
 (setq vc-follow-symlinks t)
+
+(defvar lg-before-annotate-wconf nil
+  "Window configuration before `vc-annotate'.")
+
+(defun lg-vc-show-commit-msg ()
+  (interactive)
+  (save-selected-window
+    (vc-annotate-show-log-revision-at-line)))
+
+(defun lg-vc-annotate ()
+  "Call `vc-annotate' saving window configuration."
+  (interactive)
+  (setq lg-before-annotate-wconf
+        (current-window-configuration))
+  (call-interactively 'vc-annotate))
+
+(defun lg-vc-annotate-quit ()
+  (interactive)
+  (call-interactively 'quit-window)
+  (when lg-before-annotate-wconf
+    (set-window-configuration lg-before-annotate-wconf)
+    (setq lg-before-annotate-wconf nil)))
+
+;; Unfortunatelly message "Annotating... done" shadows our message :(
+(defun lg-on-vc-annotate ()
+  (local-set-key (kbd "q") 'lg-vc-annotate-quit)
+  (local-set-key (kbd "l") 'lg-vc-show-commit-msg)
+
+  (make-local-variable 'post-command-hook)
+  (add-hook 'post-command-hook 'lg-vc-show-commit-msg))
+
+(add-hook 'vc-annotate-mode-hook 'lg-on-vc-annotate)
+
+(define-key global-map (kbd "C-x v g") 'lg-vc-annotate)
 
 ;;{{{ `--Calendar
 
