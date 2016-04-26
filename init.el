@@ -211,7 +211,7 @@ If ARG is non-nil delete region, otherwise kill."
 
 (defun lg-multitran--hf-wordfreq ()
   "Show word's frequency rank."
-  (let ((wfreq (wordfreq-find multitran-current-word)))
+  (let ((wfreq (wordfreq-find multitran-word)))
     (and wfreq (format "FRank: %S" (cadr wfreq)))))
 
 (setq multitran-header-formatters
@@ -313,6 +313,8 @@ If used with prefix ARG, force Emacs to exit, skiping `kill-emacs-hook'."
 (define-key global-map (kbd "C-<f3>") 'lg-switch-to-scratch)
 (define-key global-map (kbd "C-c C-s") 'lg-switch-to-scratch)
 
+(electric-indent-mode -1)
+
 (defun lg-insert-nl-at-eol (arg)
   "Insert new line at the end of line.
 If prefix ARG is supplied, do not move point."
@@ -321,7 +323,6 @@ If prefix ARG is supplied, do not move point."
               '(end-of-line)
               '(newline-and-indent))))
 
-(define-key global-map (kbd "RET") 'newline-and-indent)
 (define-key global-map (kbd "C-j") 'lg-insert-nl-at-eol)
 
 ;; To join two lines (aka vi's J)
@@ -887,7 +888,6 @@ If prefix ARG is specified, then replace region with the evaluation result."
 (elpy-enable)
 
 (defun lg-py-install-keys ()
-  (local-set-key (kbd "RET") 'newline-and-indent)
   (local-set-key (kbd "C-c e r") 'py-execute-region)
   (local-set-key (kbd "C-c e b") 'py-execute-buffer)
   (local-set-key (kbd "C-c e f") 'py-execute-def-or-class)
@@ -1332,6 +1332,13 @@ auto-insert-alist)
 
 (add-hook 'lua-mode-hook 'lg-lua-install-keys)
 
+;;; MarkDown mode
+;; https://raw.githubusercontent.com/defunkt/markdown-mode/master/markdown-mode.el
+;; 
+(autoload 'markdown-mode "markdown-mode"
+  "Major mode for editing Markdown files" t)
+(add-to-list 'auto-mode-alist '("\\.md\\'" . markdown-mode))
+
 ;; Enable EXWM
 (exwm-enable)
 
@@ -1353,7 +1360,10 @@ auto-insert-alist)
  ;; If you edit it by hand, you could mess it up, so be careful.
  ;; Your init file should contain only one such instance.
  ;; If there is more than one, they won't work right.
- '(package-selected-packages (quote (dash auctex undo-tree elpy))))
+ '(package-selected-packages (quote (dash auctex undo-tree elpy)))
+ '(send-mail-function (quote smtpmail-send-it))
+ '(smtpmail-smtp-server "smtp.mail.ru")
+ '(smtpmail-smtp-service 25))
 (custom-set-faces
  ;; custom-set-faces was added by Custom.
  ;; If you edit it by hand, you could mess it up, so be careful.
