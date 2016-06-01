@@ -13,6 +13,7 @@
 (push "~/.emacs.d/thirdparty" load-path)
 (push "~/dev/gnu-emacs-stuff" load-path)
 (push "~/dev/emacs-stuff" load-path)
+(push "~/dev/emacs-stuff/thirdpart" load-path)
 (push "/usr/share/emacs24/site-lisp/git" load-path)
 (autoload 'git-status "git" "git-status" t)
 (load-library "xemacs-theme-source-code")
@@ -369,7 +370,7 @@ ADDR is string in form [<HOST>:]<PORT>"
           (setcar remote (car paddr))
           (setcdr remote (cadr paddr)))
       (setcdr remote (car paddr)))
-    
+
     (switch-to-buffer (make-comint (concat "netcat-" addr) remote))
     (run-hooks 'netcat-hook)))
 
@@ -746,7 +747,7 @@ CSTR can contain special escape sequences:
 ;;}}}
 
 ;;{{{ `-- Dot-mode
-;; http://www.emacswiki.org/emacs/download/dot-mode.el
+;; https://raw.githubusercontent.com/emacsmirror/emacswiki.org/master/dot-mode.el
 (require 'dot-mode)
 (add-hook 'find-file-hooks 'dot-mode-on)
 
@@ -1413,10 +1414,119 @@ auto-insert-alist)
 
 ;;; MarkDown mode
 ;; https://raw.githubusercontent.com/defunkt/markdown-mode/master/markdown-mode.el
-;; 
+;;
 (autoload 'markdown-mode "markdown-mode"
   "Major mode for editing Markdown files" t)
 (add-to-list 'auto-mode-alist '("\\.md\\'" . markdown-mode))
+
+;;{{{ `-- Desktop
+
+(require 'desktop)
+
+(push 'dired-mode desktop-modes-not-to-save)
+(push "worklog" desktop-clear-preserve-buffers)
+(setq desktop-buffers-not-to-save
+      "\\(^nn\\.a[0-9]+\\|\\.log\\|(ftp)\\|^tags\\|^TAGS\\|^worklog\\)$")
+
+(desktop-load-default)
+(setq desktop-globals-to-save
+      '(desktop-missing-file-warning
+        kill-ring-yank-pointer
+        kill-ring
+
+        tags-file-name
+        tags-table-list
+        search-ring
+        regexp-search-ring
+        register-alist
+        file-name-history
+        minibuffer-history
+        read-expression-history
+        read-command-history
+        shell-command-history
+
+        netcat-history
+        multitran-read-history
+
+        sudoku-custom-puzzles
+        sudoku-solved-puzzles
+        command-history))
+
+;; Load the desktop
+(defvar lg-desktop-last "default")
+
+(defvar lg-desktops
+  '(("default" . ".desktop.default")
+    ("elisp" . ".desktop.elisp")
+    ("home" . ".desktop.home")
+    ("exwm" . ".desktop.exwm"))
+  "Alist of desktop files.")
+
+(defun lg-desktop-load (&optional name)
+  (interactive (list (completing-read
+                      "Desktop [default]: "
+                      (mapcar #'(lambda (el) (list (car el))) lg-desktops))))
+  (when (or (null name) (string= name ""))
+    (setq name "default"))
+  (let* ((desktop-base-file-name (cdr (assoc name lg-desktops)))
+         (desktop-base-lock-name (concat desktop-base-file-name ".lock"))
+         (default-directory (expand-file-name user-emacs-directory)))
+
+    (desktop-read user-emacs-directory)
+    (message (format "%s desktop loaded" name))))
+
+(defun lg-desktop-save (&optional name)
+  (interactive (list (completing-read
+                      (format "Desktop [%s]: " lg-desktop-last)
+                      (mapcar #'(lambda (el) (list (car el))) lg-desktops))))
+  (when (or (null name) (string= name ""))
+    (setq name lg-desktop-last))
+
+  (let* ((desktop-base-file-name (cdr (assoc name lg-desktops)))
+         (desktop-base-lock-name (concat desktop-base-file-name ".lock")))
+    (desktop-save user-emacs-directory)
+    (setq lg-desktop-last name)))
+
+(defun lg-desktop-setup ()
+  (mapc #'(lambda (v)
+            (desktop-truncate v 50))
+        (list search-ring regexp-search-ring minibuffer-history
+              shell-command-history command-history)))
+
+(remove-hook 'kill-emacs-hook 'desktop-kill) ; remove default desktop saver
+(add-hook 'kill-emacs-hook 'lg-desktop-save) ; save lg desktop on exit
+(add-hook 'kill-emacs-hook 'lg-desktop-setup)
+
+;;}}}
+
+;;{{{ `-- Editing tools
+
+;;; Colorize modeline when defining macro
+(defvar lg-minibuffer-color-saved
+  (face-background 'mode-line))
+
+(defvar lg-minibuffer-color-when-defining-macro "deeppink"
+  "Color to use for minibuffer when defining macro.
+I hate this color, so i wont forget to finish macro wheen needed.")
+(defun lg-colorize-minibuffer (color)
+  (setq lg-minibuffer-color-saved
+        (face-background 'mode-line))
+  (set-face-background 'mode-line color))
+
+(defadvice kmacro-start-macro (before lg-colorize-minibuffer activate)
+  "Start colorizing minibuffer untill macro is defined."
+  (lg-colorize-minibuffer lg-minibuffer-color-when-defining-macro))
+
+(defadvice kmacro-end-macro (before lg-decolorize-minibuffer activate)
+  "Macro defined, stop colorizing minibuffer."
+  (lg-colorize-minibuffer lg-minibuffer-color-saved))
+
+;;}}}
+
+;; Backing up in single directory
+(setq backup-directory-alist
+      (list (cons (expand-file-name ".*" "~")
+                  (expand-file-name "backups" user-emacs-directory))))
 
 ;; Enable EXWM
 (exwm-enable)
@@ -1432,6 +1542,8 @@ auto-insert-alist)
 ;;; Home specific stuff
 (ignore-errors
   (require 'home))
+
+(message (format "+ %s loaded" user-init-file))
 
 ;;;;
 (custom-set-variables
