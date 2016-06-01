@@ -354,6 +354,24 @@ If prefix ARG is supplied, do not move point."
 (define-key global-map (kbd "C->") 'lg-mark-eof)
 (define-key global-map (kbd "C-<") 'lg-mark-bof)
 
+(defvar netcat-history nil)
+
+(defun netcat (addr)
+  "Interactively connect to remote ADDR.
+ADDR is string in form [<HOST>:]<PORT>"
+  (interactive
+   (list (read-string "Remote [<host>:]<port>: " nil 'netcat-history)))
+  (let ((paddr (split-string addr ":"))
+        (remote '("0" . "0")))
+    (if (cadr paddr)
+        (progn
+          (setcar remote (car paddr))
+          (setcdr remote (cadr paddr)))
+      (setcdr remote (car paddr)))
+    
+    (switch-to-buffer (make-comint (concat "netcat-" addr) remote))
+    (run-hooks 'netcat-hook)))
+
 ;;}}}
 
 ;;{{{ `-- Mini calculator
