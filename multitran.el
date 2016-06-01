@@ -526,7 +526,7 @@ Make optional justification by JUSTIFY parameter."
     (multitran--parse-links)
 
     ;; Jump to suggestion link
-    (multitran-next-link)))
+    (multitran-next-link 1)))
 
 (defun multitran--url (url)
   "Fetch and view multitran URL."
