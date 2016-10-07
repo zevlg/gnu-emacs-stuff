@@ -1340,7 +1340,6 @@ auto-insert-alist)
                                 "&num=25"
                                 "&format=ftp")])
 
-        ("JIRA" . [simple-query "jira.mail.ru" "http://jira.mail.ru/browse/" ""])
         ("MultiTran" . [simple-query "multitran.ru" "http://www.multitran.ru/c/m.exe?l1=2&l2=1&s=" ""])
         ))
 
@@ -1368,31 +1367,6 @@ auto-insert-alist)
 
 (let ((exwm-debug-on t))
   (load-library "exwmrc"))
-
-;;;;; MAIL.RU stuff
-
-;; Commit messages to git
-(defun lg-git-ticket-name ()
-  "Extract JIRA ticket name from branch name."
-  (let* ((branch (git-symbolic-ref "HEAD"))
-         (pbranch (split-string
-                   (if (string-match "^refs/heads/" branch)
-                       (substring branch (match-end 0))
-                     branch)
-                   "-")))
-    (if (string-equal "trg" (car pbranch))
-        (concat (upcase (car pbranch)) "-" (cadr pbranch))
-      "")))
-
-(defun lg-add-trg-label ()
-  "Insert JIRA ticket name into commit message."
-  (let ((ticket (lg-git-ticket-name)))
-    (unless (string-equal ticket "")
-      (insert "\n")
-      (insert ticket)
-      (insert ": "))))
-
-(add-hook 'git-log-edit-mode-hook 'lg-add-trg-label)
 
 ;;; Nim langugae
 (push "~/.emacs.d/thirdparty/nim-mode" load-path)
@@ -1538,9 +1512,9 @@ I hate this color, so i wont forget to finish macro wheen needed.")
 (ignore-errors
   (require 'nix-mode))
 
-;;; Mail.ru specific emacs setup
+;;; Work specific emacs setup
 (ignore-errors
-  (require 'mailru))
+  (require 'work))
 
 ;;; Home specific stuff
 (ignore-errors
