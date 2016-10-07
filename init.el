@@ -3,15 +3,18 @@
 ;; Copyright (C) 2015 by Zajcev Evgeny.
 ;;
 (set-frame-height nil 30)
-;;(require 'package)
-;;(add-to-list 'package-archives
-;;             '("elpy" . "https://jorgenschaefer.github.io/packages/"))
+(require 'package)
+;; (add-to-list 'package-archives
+;;              '("elpy" . "https://jorgenschaefer.github.io/packages/"))
+(add-to-list 'package-archives
+             '("melpa" . "https://melpa.org/packages/"))
 
 (package-initialize)
 
 (push "~/.emacs.d/lisp" load-path)
 (push "~/.emacs.d/thirdparty" load-path)
 (push "~/dev/gnu-emacs-stuff" load-path)
+(push "~/dev/gnu-emacs-stuff/thirdpart" load-path)
 (push "~/dev/emacs-stuff" load-path)
 (push "~/dev/emacs-stuff/thirdpart" load-path)
 (push "/usr/share/emacs24/site-lisp/git" load-path)
@@ -276,7 +279,7 @@ Otherwise toggle."
                  (> (prefix-numeric-value arg) 0))))
   (message "Debug on error is %s" (if debug-on-error "ON" "OFF")))
 
-(defvar lg-scratch-file (expand-file-name "~/.sxemacs/*scratch-file*"))
+(defvar lg-scratch-file (expand-file-name "~/.emacs.d/*scratch-file*"))
 
 (defun lg-switch-to-scratch (arg)
   "Switch to \\*scratch\\* buffer.
@@ -702,7 +705,7 @@ CSTR can contain special escape sequences:
 
             (t (dotimes (not-used (prefix-numeric-value arg))
                  ;; XXX hack to make M-( work in slime's REPL
-                 (flet ((insert-before-markers (&rest args)
+                 (cl-flet ((insert-before-markers (&rest args)
                                                (apply #'insert args)))
                    (skeleton-insert
                     (cons nil (cdddr pair))))))))))
@@ -922,7 +925,7 @@ If prefix ARG is specified, then replace region with the evaluation result."
 ;;{{{ `-- Python
 
 ;; Builtint `python-mode' is slow in emacs 25, so use this one
-
+;; https://gitlab.com/python-mode-devs/python-mode.git
 (push "~/.emacs.d/python-mode" load-path)
 (require 'python-mode)
 
@@ -1428,7 +1431,7 @@ auto-insert-alist)
 (setq desktop-buffers-not-to-save
       "\\(^nn\\.a[0-9]+\\|\\.log\\|(ftp)\\|^tags\\|^TAGS\\|^worklog\\)$")
 
-(desktop-load-default)
+(desktop-save-mode 1)
 (setq desktop-globals-to-save
       '(desktop-missing-file-warning
         kill-ring-yank-pointer
@@ -1551,7 +1554,7 @@ I hate this color, so i wont forget to finish macro wheen needed.")
  ;; If you edit it by hand, you could mess it up, so be careful.
  ;; Your init file should contain only one such instance.
  ;; If there is more than one, they won't work right.
- '(package-selected-packages (quote (dash auctex undo-tree elpy)))
+ '(package-selected-packages (quote (cmake-ide dash auctex undo-tree elpy)))
  '(send-mail-function (quote smtpmail-send-it)))
 (custom-set-faces
  ;; custom-set-faces was added by Custom.
