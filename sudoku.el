@@ -1,12 +1,12 @@
-;;; sudoku.el -- Simple sudoku game, can download puzzles from the web
+;;; sudoku.el --- Simple sudoku game, can download puzzles from the web
 
-;; Copyright (C) 2009-2011,2015 by Zajcev Evgeny.
+;; Copyright (C) 2009-2011,2015 by Zajcev Evgeny
 
 ;; Author: Zajcev Evgeny <zevlg@yandex.ru>
-;; Created: Thu Oct 29 21:55:35 2009
 ;; Keywords: games
-;; URL: http://github.com/zevlg/gnu-emacs-stuff/blob/master/sudoku.el
 ;; Version: 1.3
+;; Created: Thu Oct 29 21:55:35 2009
+;; URL: http://github.com/zevlg/gnu-emacs-stuff/blob/master/sudoku.el
 
 ;; This program is free software; you can redistribute it and/or
 ;; modify it under the terms of the GNU General Public License
@@ -133,6 +133,7 @@
 ;;
 
 ;;; Code:
+
 
 (require 'cl)
 (require 'easymenu)
