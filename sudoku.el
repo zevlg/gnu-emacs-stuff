@@ -226,7 +226,7 @@
   "Face for values automatically insterted."
   :group 'sudoku)
 
-(defcustom sudoku-style 'unicode
+(defcustom sudoku-style 'plain
   "Style of board.
 Any style assumes fixed-width font."
   :type '(choice (const :tag "Plain" plain)
