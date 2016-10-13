@@ -728,7 +728,9 @@ M-{ causes next skeleton insertation.
 {
         X
 }"
-  (make-local-variable 'lg-skeleton-pairs)
+  ;; make a copy so `setcdr' won't affect initial value
+  (set (make-local-variable 'lg-skeleton-pairs)
+       (copy-alist lg-skeleton-pairs))
   (setcdr (assq ?\{ lg-skeleton-pairs)
           '(?{ ?} ?{ '(progn (indent-according-to-mode) nil) \n _ \n ?}
                '(progn (indent-according-to-mode) nil))))
