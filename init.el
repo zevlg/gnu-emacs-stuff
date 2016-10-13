@@ -721,6 +721,21 @@ CSTR can contain special escape sequences:
 (define-key global-map (kbd "M-(") 'lg-skeleton-pair-insert)
 (define-key global-map (kbd "M-[") 'lg-skeleton-pair-insert)
 
+;; pairing for C-mode
+(defun lg-cmode-install-skeletor-pairs ()
+  "C-mode specific skeleton pair for curly braces.
+M-{ causes next skeleton insertation.
+{
+        X
+}"
+  (make-local-variable 'lg-skeleton-pairs)
+  (setcdr (assq ?\{ lg-skeleton-pairs)
+          '(?{ ?} ?{ '(progn (indent-according-to-mode) nil) \n _ \n ?}
+               '(progn (indent-according-to-mode) nil))))
+
+(add-hook 'c-mode-hook 'lg-cmode-install-skeletor-pairs)
+(add-hook 'objc-mode-hook 'lg-cmode-install-skeletor-pairs)
+
 ;;}}}
 
 ;;{{{ `-- Highlight current line
@@ -1350,6 +1365,11 @@ auto-insert-alist)
 ;;; C-mode
 (push (cons 'c-mode "bsd") c-default-style)
 
+(defun lg-c-mode-install-keys ()
+  (local-set-key (kbd "C-c C-s") 'lg-switch-to-scratch))
+
+(add-hook 'c-mode-hook 'lg-c-mode-install-keys)
+
 ;;; Haskell mode
 ;; git clone https://github.com/haskell/haskell-mode.git
 ;; cd haskell-mode && make
@@ -1357,6 +1377,12 @@ auto-insert-alist)
 (require 'haskell-mode-autoloads)
 
 (define-key global-map (kbd "C-c d h") 'haskell-interactive-switch)
+
+;;; Cmake mode
+(defun lg-cmake-install-keys ()
+  (local-set-key (kbd "C-c h") 'cmake-help))
+
+(add-hook 'cmake-mode-hook 'lg-cmake-install-keys)
 
 ;; ERC
 (setq erc-track-enable-keybindings nil)
@@ -1369,11 +1395,13 @@ auto-insert-alist)
   (load-library "exwmrc"))
 
 ;;; Nim langugae
-(push "~/.emacs.d/thirdparty/nim-mode" load-path)
+;; install via MELPA
+;(push "~/.emacs.d/thirdparty/nim-mode" load-path)
 ;(require 'nim-mode)
 
 ;;; Lua - https://github.com/immerrr/lua-mode.git
-(push "~/.emacs.d/thirdparty/lua-mode" load-path)
+;; install via MELPA
+;(push "~/.emacs.d/thirdparty/lua-mode" load-path)
 (autoload 'lua-mode "lua-mode" "" t nil)
 (add-to-list 'auto-mode-alist '("\\.lua$" . lua-mode))
 (add-to-list 'interpreter-mode-alist '("lua" . lua-mode))
@@ -1528,7 +1556,9 @@ I hate this color, so i wont forget to finish macro wheen needed.")
  ;; If you edit it by hand, you could mess it up, so be careful.
  ;; Your init file should contain only one such instance.
  ;; If there is more than one, they won't work right.
- '(package-selected-packages (quote (cmake-ide dash auctex undo-tree elpy)))
+ '(package-selected-packages
+   (quote
+    (autopair nim-mode irony cmake-mode git-gutter cmake-ide dash auctex undo-tree elpy)))
  '(send-mail-function (quote smtpmail-send-it)))
 (custom-set-faces
  ;; custom-set-faces was added by Custom.
