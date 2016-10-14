@@ -1387,26 +1387,32 @@ auto-insert-alist)
 (add-hook 'cmake-mode-hook 'lg-cmake-install-keys)
 
 ;; ERC
-(setq erc-track-enable-keybindings nil)
+(setq erc-track-enable-keybindings t)
 
-;;; Haskell mode
-(push "~/.emacs.d/thirdparty/haskell-mode" load-path)
-(require 'haskell-mode-autoloads)
+;;; Haskell mode (package-install 'haskell-mode)
+;(push "~/.emacs.d/thirdparty/haskell-mode" load-path)
+;(require 'haskell-mode-autoloads)
 
 (let ((exwm-debug-on t))
   (load-library "exwmrc"))
 
-;;; Nim langugae
-;; install via MELPA
-;(push "~/.emacs.d/thirdparty/nim-mode" load-path)
-;(require 'nim-mode)
+;;; Nim langugae (package-install 'nim-mode)
+(setq nim-compile-default-command
+  '("c" "-d:release" "--verbosity:0" "--hint[Processing]:off"))
+
+(defun lg-nim-mode-prepare ()
+  (set (make-local-variable 'compilation-read-command) nil)
+
+  (local-set-key (kbd "C-c c c") 'nim-compile))
+
+(add-hook 'nim-mode-hook 'lg-nim-mode-prepare)
 
 ;;; Lua - https://github.com/immerrr/lua-mode.git
-;; install via MELPA
+;; via MELPA (package-install 'lua-mode)
 ;(push "~/.emacs.d/thirdparty/lua-mode" load-path)
-(autoload 'lua-mode "lua-mode" "" t nil)
-(add-to-list 'auto-mode-alist '("\\.lua$" . lua-mode))
-(add-to-list 'interpreter-mode-alist '("lua" . lua-mode))
+;(autoload 'lua-mode "lua-mode" "" t nil)
+;(add-to-list 'auto-mode-alist '("\\.lua$" . lua-mode))
+;(add-to-list 'interpreter-mode-alist '("lua" . lua-mode))
 (defalias 'run-lua #'lua-start-process)
 (autoload 'lua-start-process "lua-mode" "" t nil)
 
@@ -1560,7 +1566,7 @@ I hate this color, so i wont forget to finish macro wheen needed.")
  ;; If there is more than one, they won't work right.
  '(package-selected-packages
    (quote
-    (autopair nim-mode irony cmake-mode git-gutter cmake-ide dash auctex undo-tree elpy)))
+    (haskell-mode autopair nim-mode irony cmake-mode git-gutter cmake-ide dash auctex undo-tree elpy)))
  '(send-mail-function (quote smtpmail-send-it)))
 (custom-set-faces
  ;; custom-set-faces was added by Custom.
