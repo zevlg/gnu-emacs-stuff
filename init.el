@@ -1436,7 +1436,11 @@ auto-insert-alist)
 
 (require 'desktop)
 
+;; Restoring frames does not work under EXWM
+(setq desktop-restore-frames nil)
+
 (push 'dired-mode desktop-modes-not-to-save)
+(push 'multran-mode desktop-modes-not-to-save)
 (push "worklog" desktop-clear-preserve-buffers)
 (setq desktop-buffers-not-to-save
       "\\(^nn\\.a[0-9]+\\|\\.log\\|(ftp)\\|^tags\\|^TAGS\\|^worklog\\)$")
@@ -1497,7 +1501,7 @@ auto-insert-alist)
 
   (let* ((desktop-base-file-name (cdr (assoc name lg-desktops)))
          (desktop-base-lock-name (concat desktop-base-file-name ".lock")))
-    (desktop-save user-emacs-directory)
+    (desktop-save user-emacs-directory t)
     (setq lg-desktop-last name)))
 
 (defun lg-desktop-setup ()
@@ -1556,6 +1560,7 @@ I hate this color, so i wont forget to finish macro wheen needed.")
 (ignore-errors
   (require 'home))
 
+(lg-desktop-load)
 (message (format "+ %s loaded" user-init-file))
 
 ;;;;
