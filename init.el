@@ -1368,6 +1368,12 @@ auto-insert-alist)
 (push (cons 'c-mode "bsd") c-default-style)
 
 (defun lg-c-mode-install-keys ()
+  (c-toggle-electric-state t)
+
+  (local-set-key (kbd "M-.") 'rtags-find-symbol)
+
+  (local-set-key (kbd "C-c c c") 'cmake-ide-compile)
+  (local-set-key (kbd "C-c c d") 'disaster) ; inplace disassembler
   (local-set-key (kbd "C-c C-s") 'lg-switch-to-scratch))
 
 (add-hook 'c-mode-hook 'lg-c-mode-install-keys)
@@ -1385,6 +1391,15 @@ auto-insert-alist)
   (local-set-key (kbd "C-c h") 'cmake-help))
 
 (add-hook 'cmake-mode-hook 'lg-cmake-install-keys)
+
+;; Make sure rdm/rc/rp are in PATH
+(unless (fboundp 'string-empty-p)
+  ;; rtags makes use of `string-empty-p', that is not in Emacs25
+  (defun string-empty-p (str)
+    (equal str "")))
+
+(require 'rtags)
+(cmake-ide-setup)
 
 ;; ERC
 (setq erc-track-enable-keybindings t)
@@ -1571,7 +1586,7 @@ I hate this color, so i wont forget to finish macro wheen needed.")
  ;; If there is more than one, they won't work right.
  '(package-selected-packages
    (quote
-    (haskell-mode autopair nim-mode irony cmake-mode git-gutter cmake-ide dash auctex undo-tree elpy)))
+    (rtags auto-complete-clang disaster haskell-mode autopair nim-mode irony cmake-mode git-gutter cmake-ide dash auctex undo-tree elpy)))
  '(send-mail-function (quote smtpmail-send-it)))
 (custom-set-faces
  ;; custom-set-faces was added by Custom.
