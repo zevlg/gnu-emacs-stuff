@@ -34,9 +34,11 @@
 ;;
 ;(set-face-font
 ; 'default "-xos4-terminus-medium-r-normal--32-320-72-72-c-160-koi8-r")
+; (set-face-attribute 'default nil :family "Inconsolata LGC")
+; (set-face-attribute 'default nil :height 240)
 
-(set-face-attribute 'default nil :family "Inconsolata LGC")
-(set-face-attribute 'default nil :height 240)
+(set-face-attribute 'default nil :family "RictyDiminished")
+(set-face-attribute 'default nil :height 292)
 
 (setq inhibit-splash-screen t)
 (setq enable-recursive-minibuffers t)
@@ -295,6 +297,9 @@ If prefix ARG is specified, switch in other window."
     (if arg
         (switch-to-buffer-other-window scbuf)
       (switch-to-buffer scbuf))))
+
+(defun lg-install-switch-to-scratch ()
+  (local-set-key (kbd "C-c C-s") 'lg-switch-to-scratch))
 
 (setq initial-major-mode 'lisp-interaction-mode)
 (push '("\\*scratch-file\\*$" . lisp-interaction-mode) auto-mode-alist)
@@ -743,6 +748,10 @@ M-{ causes next skeleton insertation.
 
 (add-hook 'c-mode-hook 'lg-cmode-install-skeletor-pairs)
 (add-hook 'objc-mode-hook 'lg-cmode-install-skeletor-pairs)
+
+;; To automatically start `rdm' if not yet running
+(add-hook 'c-mode-hook 'cmake-ide--mode-hook)
+(add-hook 'objc-mode-hook 'cmake-ide--mode-hook)
 
 ;;}}}
 
@@ -1374,6 +1383,12 @@ auto-insert-alist)
 (push (cons 'c-mode "bsd") c-default-style)
 
 (defun lg-c-mode-install-keys ()
+  (c-toggle-electric-state t)
+
+  (local-set-key (kbd "M-.") 'rtags-find-symbol)
+
+  (local-set-key (kbd "C-c c c") 'cmake-ide-compile)
+  (local-set-key (kbd "C-c c d") 'disaster) ; inplace disassembler
   (local-set-key (kbd "C-c C-s") 'lg-switch-to-scratch))
 
 (add-hook 'c-mode-hook 'lg-c-mode-install-keys)
@@ -1391,6 +1406,15 @@ auto-insert-alist)
   (local-set-key (kbd "C-c h") 'cmake-help))
 
 (add-hook 'cmake-mode-hook 'lg-cmake-install-keys)
+
+;; Make sure rdm/rc/rp are in PATH
+(unless (fboundp 'string-empty-p)
+  ;; rtags makes use of `string-empty-p', that is not in Emacs25
+  (defun string-empty-p (str)
+    (equal str "")))
+
+(require 'rtags)
+(cmake-ide-setup)
 
 ;; ERC
 (setq erc-track-enable-keybindings t)
@@ -1437,6 +1461,24 @@ auto-insert-alist)
 (autoload 'markdown-mode "markdown-mode"
   "Major mode for editing Markdown files" t)
 (add-to-list 'auto-mode-alist '("\\.md\\'" . markdown-mode))
+
+;;; Diff-mode
+(defun lg-diff-revert-hunk ()
+  "Undo current hunk."
+  (interactive)
+  (let ((diff-advance-after-apply-hunk nil))
+    (diff-apply-hunk '(4)))
+
+  (diff-hunk-kill))
+
+(defun lg-diff-install-keys ()
+  (local-set-key (kbd "C-/") 'lg-diff-revert-hunk))
+
+(add-hook 'diff-mode-hook 'lg-diff-install-keys)
+
+;;; Sh-mode
+
+(add-hook 'sh-mode-hook 'lg-install-switch-to-scratch)
 
 ;;{{{ `-- Desktop
 
@@ -1577,7 +1619,7 @@ I hate this color, so i wont forget to finish macro wheen needed.")
  ;; If there is more than one, they won't work right.
  '(package-selected-packages
    (quote
-    (haskell-mode autopair nim-mode irony cmake-mode git-gutter cmake-ide dash auctex undo-tree elpy)))
+    (rtags auto-complete-clang disaster haskell-mode autopair nim-mode irony cmake-mode git-gutter cmake-ide dash auctex undo-tree elpy)))
  '(send-mail-function (quote smtpmail-send-it)))
 (custom-set-faces
  ;; custom-set-faces was added by Custom.
