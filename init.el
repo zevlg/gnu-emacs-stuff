@@ -1,11 +1,17 @@
 ;; init.el --- Custom configuration for GNU Emacs.
 ;;
-;; Copyright (C) 2015 by Zajcev Evgeny.
+;; Copyright (C) 2015,2016 by Zajcev Evgeny
+;;
+;; On new host do
+;;   M-x package-refresh-contents RET
+;;   M-x package-install-selected-packages RET
+;; after loading init.el fo the first time
 ;;
 (set-frame-height nil 30)
 (require 'package)
 ;; (add-to-list 'package-archives
 ;;              '("elpy" . "https://jorgenschaefer.github.io/packages/"))
+
 (add-to-list 'package-archives
              '("melpa" . "https://melpa.org/packages/"))
 
