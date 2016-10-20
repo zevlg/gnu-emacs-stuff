@@ -1388,6 +1388,9 @@ auto-insert-alist)
 
   (local-set-key (kbd "M-.") 'rtags-find-symbol)
 
+  ;; switch .c <--> .h files
+  (local-set-key (kbd "C-c C-h") 'ff-find-related-file)
+
   (local-set-key (kbd "C-c c c") 'cmake-ide-compile)
   (local-set-key (kbd "C-c c d") 'disaster) ; inplace disassembler
   (local-set-key (kbd "C-c C-s") 'lg-switch-to-scratch))
