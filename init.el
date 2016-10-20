@@ -901,7 +901,7 @@ If prefix ARG is specified, then replace region with the evaluation result."
 (define-key global-map (kbd "C-c m g") 'imenu)
 (define-key global-map (kbd "C-c m o") 'occur)
 (define-key global-map (kbd "C-c m |") 'vertical-mode)
-(define-key global-map (kbd "C-c m v") 'vvb-mode)
+(define-key global-map (kbd "C-c m v") 'fci-mode)
 (define-key global-map (kbd "C-c m h") 'highline-mode)
 (define-key global-map (kbd "C-c m w") 'whitespace-mode)
 (define-key global-map (kbd "C-c m F") 'flyspell-mode)
@@ -932,6 +932,7 @@ If prefix ARG is specified, then replace region with the evaluation result."
 (define-key global-map (kbd "C-c l k") 'browse-kill-ring)
 (define-key global-map (kbd "C-c l r") 'list-registers)
 (define-key global-map (kbd "C-c l o") 'list-packages)
+(define-key global-map (kbd "C-c l w") 'whitespace-report)
 
 ;;}}}
 
@@ -1474,6 +1475,11 @@ auto-insert-alist)
 
 (add-hook 'sh-mode-hook 'lg-install-switch-to-scratch)
 
+;;; Visible vertical line
+(setq fci-rule-column 80
+      fci-rule-width 2)
+(setq fci-rule-color "gray75")
+
 ;;{{{ `-- Desktop
 
 (require 'desktop)
@@ -1613,7 +1619,7 @@ I hate this color, so i wont forget to finish macro wheen needed.")
  ;; If there is more than one, they won't work right.
  '(package-selected-packages
    (quote
-    (rtags auto-complete-clang disaster haskell-mode autopair nim-mode irony cmake-mode git-gutter cmake-ide dash auctex undo-tree elpy)))
+    (fill-column-indicator rtags auto-complete-clang disaster haskell-mode autopair nim-mode irony cmake-mode git-gutter cmake-ide dash auctex undo-tree elpy)))
  '(send-mail-function (quote smtpmail-send-it)))
 (custom-set-faces
  ;; custom-set-faces was added by Custom.
