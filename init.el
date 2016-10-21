@@ -480,6 +480,15 @@ CSTR can contain special escape sequences:
 
 ;;{{{ `-- Grep
 
+;; Use previous search regex if default tag is not found
+(defun lg-find-tag-default ()
+  "Use previous grep as default tag."
+  (let ((f-t-d-f (get major-mode 'find-tag-default-function)))
+  (or (funcall (or f-t-d-f 'find-tag-default))
+      (car grep-regexp-history))))
+
+(setq find-tag-default-function 'lg-find-tag-default)
+
 (defun lg-grep-glob ()
   "Calculate glob pattern according to current buffer filename."
   (let* ((bn (or (buffer-file-name)
