@@ -525,8 +525,8 @@ CSTR can contain special escape sequences:
 (autoload 'git-status "git" "git-status" t)
 
 (defun lg-git-status-install-keys ()
-  (local-set-key (kbd "<tab>") 'git-next-unmerged-file)
-  (local-set-key (kbd "<backtab>") 'git-prev-unmerged-file))
+  (local-set-key (kbd "<tab>") 'git-next-file)
+  (local-set-key (kbd "<backtab>") 'git-prev-file))
 
 (add-hook 'git-status-mode-hook 'lg-git-status-install-keys)
 
