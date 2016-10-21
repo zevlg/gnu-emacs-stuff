@@ -492,11 +492,11 @@ CSTR can contain special escape sequences:
 (defun lg-grep-glob ()
   "Calculate glob pattern according to current buffer filename."
   (let* ((bn (or (buffer-file-name)
-		 (replace-regexp-in-string "<[0-9]+>\\'" "" (buffer-name))))
-	 (fn (and bn
-		  (stringp bn)
-		  (file-name-nondirectory bn)))
-	 (ext (and fn
+                 (replace-regexp-in-string "<[0-9]+>\\'" "" (buffer-name))))
+         (fn (and bn
+                  (stringp bn)
+                  (file-name-nondirectory bn)))
+         (ext (and fn
                    (let ((ext (file-name-extension fn)))
                      (and ext (concat "*." ext))))))
     (or ext "*")))
@@ -1454,6 +1454,29 @@ auto-insert-alist)
 ;;; C-mode
 (push (cons 'c-mode "bsd") c-default-style)
 
+(defvar lg-cmake-ide--compile-target "")
+
+;; Workaround https://github.com/atilaneves/cmake-ide/issues/76
+(defun cmake-ide--get-compile-command (dir)
+  "Return the compile command to use for DIR."
+  (cond (cmake-ide-compile-command cmake-ide-compile-command)
+        ((file-exists-p (expand-file-name "build.ninja" dir))
+         (concat cmake-ide-ninja-command " -C " dir))
+
+        ((file-exists-p (expand-file-name "Makefile" dir))
+         (concat "make --no-print-directory -C " dir " "
+                 lg-cmake-ide--compile-target))
+
+        (t nil)))
+
+(defun lg-compile-test-target (no-verbose)
+  "*Run ctest, by make 'test' target.
+C-u to omit verbosity."
+  (interactive "P")
+  (let ((lg-cmake-ide--compile-target
+         (concat (if no-verbose "" "ARGS=\"-V\" ") "test")))
+    (cmake-ide-compile)))
+
 (defun lg-c-mode-install-keys ()
   (c-toggle-electric-state t)
 
@@ -1462,6 +1485,7 @@ auto-insert-alist)
   ;; switch .c <--> .h files
   (local-set-key (kbd "C-c C-h") 'ff-find-related-file)
 
+  (local-set-key (kbd "C-c c t") 'lg-compile-test-target)
   (local-set-key (kbd "C-c c c") 'cmake-ide-compile)
   (local-set-key (kbd "C-c c d") 'disaster) ; inplace disassembler
   (local-set-key (kbd "C-c C-s") 'lg-switch-to-scratch))
