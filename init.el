@@ -24,7 +24,6 @@
 (push "~/dev/emacs-stuff" load-path)
 (push "~/dev/emacs-stuff/thirdpart" load-path)
 (push "/usr/share/emacs24/site-lisp/git" load-path)
-(autoload 'git-status "git" "git-status" t)
 (load-library "xemacs-theme-source-code")
 (custom-theme-set-faces
  'xemacs
@@ -479,6 +478,60 @@ CSTR can contain special escape sequences:
 
 ;;}}}
 
+;;{{{ `-- Grep
+
+(defun lg-grep-glob ()
+  "Calculate glob pattern according to current buffer filename."
+  (let* ((bn (or (buffer-file-name)
+		 (replace-regexp-in-string "<[0-9]+>\\'" "" (buffer-name))))
+	 (fn (and bn
+		  (stringp bn)
+		  (file-name-nondirectory bn)))
+	 (ext (and fn
+                   (let ((ext (file-name-extension fn)))
+                     (and ext (concat "*." ext))))))
+    (or ext "*")))
+
+(defun lg-grep (regexp &optional files-glob template)
+  "*Run grep to match REGEXP in FILES."
+  (interactive
+   (progn
+     (grep-compute-defaults)
+     (let* ((regexp (grep-read-regexp))
+            (files-glob (or (and current-prefix-arg (grep-read-files regexp))
+                            (lg-grep-glob)))
+            (template grep-template))
+       (when (string-suffix-p ".gz" files-glob)
+         (let ((grep-program "zgrep")
+               ;; Don't change global values for variables computed
+               ;; by `grep-compute-defaults'.
+               (grep-template nil)
+               (grep-command nil)
+               (grep-host-defaults-alist nil))
+           ;; Recompute defaults using let-bound values above.
+           (grep-compute-defaults)
+           (setq template grep-template)))
+
+       (list regexp files-glob template))))
+
+  (let ((grep-template template)
+        (grep-find-ignored-files nil))
+    (lgrep regexp files-glob default-directory nil)))
+
+;;}}}
+
+;;{{{ `-- Git
+
+(autoload 'git-status "git" "git-status" t)
+
+(defun lg-git-status-install-keys ()
+  (local-set-key (kbd "<tab>") 'git-next-unmerged-file)
+  (local-set-key (kbd "<backtab>") 'git-prev-unmerged-file))
+
+(add-hook 'git-status-mode-hook 'lg-git-status-install-keys)
+
+;;}}}
+
 ;;{{{   `-- C-o - Prefix for -other- commands
 
 ;; Make C-o to be keymap for othering
@@ -897,7 +950,7 @@ If prefix ARG is specified, then replace region with the evaluation result."
 (define-key global-map (kbd "C-c r s") 're-search-forward)
 (define-key global-map (kbd "C-c r r") 're-search-backward)
 (define-key global-map (kbd "C-c r e") 'query-replace-regexp)
-(define-key global-map (kbd "C-c r g") 'grep)
+(define-key global-map (kbd "C-c r g") 'lg-grep)
 (define-key global-map (kbd "C-c r o") 'occur)
 
 ;; C-cm Prefix for MISC commands
@@ -950,6 +1003,15 @@ If prefix ARG is specified, then replace region with the evaluation result."
 ;;}}}
 
 ;;{{{   `-- C-cg - Git commands
+
+(define-key global-map (kbd "C-x v p") 'vc-push)
+(define-key global-map (kbd "C-x v S") 'vc-create-tag)
+(define-key global-map (kbd "C-x v s") 'git-status)
+
+(define-key global-map (kbd "C-c g a") 'lg-vc-annotate)
+(define-key global-map (kbd "C-c g =") 'vc-diff)
+(define-key global-map (kbd "C-c g p") 'vc-push)
+(define-key global-map (kbd "C-c g u") 'vc-update)
 
 (define-key global-map (kbd "C-c g s") 'git-status)
 
