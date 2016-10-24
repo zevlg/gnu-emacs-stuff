@@ -1064,7 +1064,7 @@ If prefix ARG is specified, then replace region with the evaluation result."
 
 ;; Save places of visited files
 (require 'saveplace)
-(setq save-place-file (expand-file-name "~/.emacs-places"))
+(setq save-place-file (expand-file-name "places" user-emacs-directory))
 (save-place-mode 1)
 
 (defun emacs-places-save ()
