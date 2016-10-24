@@ -1474,7 +1474,7 @@ auto-insert-alist)
 C-u to omit verbosity."
   (interactive "P")
   (let ((lg-cmake-ide--compile-target
-         (concat (if no-verbose "" "ARGS=\"-V\" ") "test")))
+         (concat (if no-verbose "" "ARGS=\"--output-on-failure\" ") "test")))
     (cmake-ide-compile)))
 
 (defun lg-c-mode-install-keys ()

@@ -1,5 +1,6 @@
 ;;; EXWM development
 (push "~/dev/exwm" load-path)
+;; v0.9 - e58ac743f97a005bb737e234a1eb1d467ed84bde
 (push "~/dev/xelb" load-path)
 
 (defun lg-minibuf-focus-in ()
