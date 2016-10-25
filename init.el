@@ -109,6 +109,8 @@ bottom of the buffer stack."
 (setq ido-show-dot-for-dired t)
 ;; Disable confusing auto-merging
 (setq ido-auto-merge-work-directories-length -1)
+;; Enter directory on `/'
+(setq ido-enter-matching-directory 'first)
 
 (ido-mode 1)
 
@@ -1451,12 +1453,19 @@ auto-insert-alist)
 
 ;;}}}
 
+;;; Compilation
+(setq compilation-scroll-output t)
+(setq compilation-window-height 10)
+(setq compilation-ask-about-save nil)   ; do not ask about saving
+
 ;;; C-mode
 (push (cons 'c-mode "bsd") c-default-style)
 
 (defvar lg-cmake-ide--compile-target "")
 
 ;; Workaround https://github.com/atilaneves/cmake-ide/issues/76
+;; it implements `cmake-ide-make-command' however it is unable to
+;; specify make target
 (defun cmake-ide--get-compile-command (dir)
   "Return the compile command to use for DIR."
   (cond (cmake-ide-compile-command cmake-ide-compile-command)
@@ -1526,15 +1535,42 @@ C-u to omit verbosity."
   (load-library "exwmrc"))
 
 ;;; Nim langugae (package-install 'nim-mode)
+(setq nim-indent-offset 4)              ; default 2 is too small
+
 (setq nim-compile-default-command
-  '("c" "-d:release" "--verbosity:0" "--hint[Processing]:off"))
+  '("c" "-d:release" "--verbosity:0" "--listFullPaths" "--hint[Processing]:off"))
 
 (defun lg-nim-mode-prepare ()
   (set (make-local-variable 'compilation-read-command) nil)
 
-  (local-set-key (kbd "C-c c c") 'nim-compile))
+  (if (cmake-ide--locate-cmakelists)
+      ;; cmake based nim compilation
+      (local-set-key (kbd "C-c c c") 'cmake-ide-compile)
+
+    (local-set-key (kbd "C-c c c") 'nim-compile))
+  )
 
 (add-hook 'nim-mode-hook 'lg-nim-mode-prepare)
+
+;; Catch messages from nim compiler
+;; Implies  --listFullPaths  nim flag
+(setq nim-compilation-error-regexp
+      `(nim ,(rx bol
+                 (group-n 1 (0+ (not (any "("))))
+                 (: "(")
+                 (group-n 2 (regexp "[0-9]+"))
+                 (: ", ")
+                 (group-n 3 (regexp "[0-9]+"))
+                 (: ")")
+                 (| (group-n 4 (: " Warning:"))
+                    (group-n 5 (: " Error:")))
+                 (group-n 6 (* any))
+                 eol
+                 )
+            1 2 3 (4 . nil)))
+(pushnew nim-compilation-error-regexp
+         compilation-error-regexp-alist-alist)
+(pushnew 'nim compilation-error-regexp-alist)
 
 ;;; Lua - https://github.com/immerrr/lua-mode.git
 ;; via MELPA (package-install 'lua-mode)
@@ -1723,7 +1759,7 @@ I hate this color, so i wont forget to finish macro wheen needed.")
  ;; If there is more than one, they won't work right.
  '(package-selected-packages
    (quote
-    (fill-column-indicator rtags auto-complete-clang disaster haskell-mode autopair nim-mode irony cmake-mode git-gutter cmake-ide dash auctex undo-tree elpy)))
+    (multitran fill-column-indicator rtags auto-complete-clang disaster haskell-mode autopair nim-mode irony cmake-mode git-gutter cmake-ide dash auctex undo-tree elpy)))
  '(send-mail-function (quote smtpmail-send-it)))
 (custom-set-faces
  ;; custom-set-faces was added by Custom.
