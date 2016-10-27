@@ -36,7 +36,8 @@
 ; (set-face-attribute 'default nil :family "Inconsolata LGC")
 ; (set-face-attribute 'default nil :height 240)
 
-(set-face-attribute 'default nil :family "RictyDiminished")
+;; See https://github.com/zevlg/RictyDiminishedL
+(set-face-attribute 'default nil :family "RictyDiminishedL")
 (set-face-attribute 'default nil :height 292)
 
 (setq inhibit-splash-screen t)
@@ -1500,6 +1501,7 @@ C-u to omit verbosity."
   (local-set-key (kbd "C-c C-s") 'lg-switch-to-scratch))
 
 (add-hook 'c-mode-hook 'lg-c-mode-install-keys)
+(add-hook 'c++-mode-hook 'lg-c-mode-install-keys)
 
 ;;; Haskell mode
 ;; git clone https://github.com/haskell/haskell-mode.git
@@ -1720,7 +1722,9 @@ I hate this color, so i wont forget to finish macro wheen needed.")
 
 (defadvice kmacro-start-macro (before lg-colorize-minibuffer activate)
   "Start colorizing minibuffer untill macro is defined."
-  (lg-colorize-minibuffer lg-minibuffer-color-when-defining-macro))
+  (unless (string= (face-background 'mode-line)
+                   lg-minibuffer-color-when-defining-macro)
+    (lg-colorize-minibuffer lg-minibuffer-color-when-defining-macro)))
 
 (defadvice kmacro-end-macro (before lg-decolorize-minibuffer activate)
   "Macro defined, stop colorizing minibuffer."
@@ -1759,7 +1763,7 @@ I hate this color, so i wont forget to finish macro wheen needed.")
  ;; If there is more than one, they won't work right.
  '(package-selected-packages
    (quote
-    (multitran fill-column-indicator rtags auto-complete-clang disaster haskell-mode autopair nim-mode irony cmake-mode git-gutter cmake-ide dash auctex undo-tree elpy)))
+    (irony-eldoc multitran fill-column-indicator rtags auto-complete-clang disaster haskell-mode autopair nim-mode irony cmake-mode git-gutter cmake-ide dash auctex undo-tree elpy)))
  '(send-mail-function (quote smtpmail-send-it)))
 (custom-set-faces
  ;; custom-set-faces was added by Custom.
