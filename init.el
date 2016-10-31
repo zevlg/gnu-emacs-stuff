@@ -38,7 +38,7 @@
 
 ;; See https://github.com/zevlg/RictyDiminishedL
 (set-face-attribute 'default nil :family "RictyDiminishedL")
-(set-face-attribute 'default nil :height 292)
+(set-face-attribute 'default nil :height 300)
 
 (setq inhibit-splash-screen t)
 (setq enable-recursive-minibuffers t)
@@ -1462,22 +1462,22 @@ auto-insert-alist)
 ;;; C-mode
 (push (cons 'c-mode "bsd") c-default-style)
 
+(setq cmake-ide-make-command "make --no-print-directory")
+
+(defcustom lg-cmake-ide-build-dir "build")
+
 (defvar lg-cmake-ide--compile-target "")
 
-;; Workaround https://github.com/atilaneves/cmake-ide/issues/76
-;; it implements `cmake-ide-make-command' however it is unable to
-;; specify make target
-(defun cmake-ide--get-compile-command (dir)
-  "Return the compile command to use for DIR."
-  (cond (cmake-ide-compile-command cmake-ide-compile-command)
-        ((file-exists-p (expand-file-name "build.ninja" dir))
-         (concat cmake-ide-ninja-command " -C " dir))
-
-        ((file-exists-p (expand-file-name "Makefile" dir))
-         (concat "make --no-print-directory -C " dir " "
-                 lg-cmake-ide--compile-target))
-
-        (t nil)))
+(defun lg-cmake-ide-compile ()
+  "Custom target awared cmake compilation."
+  (interactive)
+  (let ((cmkdir (cmake-ide--locate-cmakelists)))
+    (if (and cmkdir (file-exists-p (concat cmkdir "/build")))
+        (let ((cmake-ide-compile-command
+               (concat (cmake-ide--get-compile-command (concat cmkdir "/build"))
+                       " " lg-cmake-ide--compile-target)))
+          (cmake-ide-compile))
+      (cmake-ide-compile))))
 
 (defun lg-compile-test-target (no-verbose)
   "*Run ctest, by make 'test' target.
@@ -1485,7 +1485,7 @@ C-u to omit verbosity."
   (interactive "P")
   (let ((lg-cmake-ide--compile-target
          (concat (if no-verbose "" "ARGS=\"--output-on-failure\" ") "test")))
-    (cmake-ide-compile)))
+    (lg-cmake-ide-compile)))
 
 (defun lg-c-mode-install-keys ()
   (c-toggle-electric-state t)
@@ -1495,8 +1495,8 @@ C-u to omit verbosity."
   ;; switch .c <--> .h files
   (local-set-key (kbd "C-c C-h") 'ff-find-related-file)
 
+  (local-set-key (kbd "C-c c c") 'lg-cmake-ide-compile)
   (local-set-key (kbd "C-c c t") 'lg-compile-test-target)
-  (local-set-key (kbd "C-c c c") 'cmake-ide-compile)
   (local-set-key (kbd "C-c c d") 'disaster) ; inplace disassembler
   (local-set-key (kbd "C-c C-s") 'lg-switch-to-scratch))
 
@@ -1504,10 +1504,6 @@ C-u to omit verbosity."
 (add-hook 'c++-mode-hook 'lg-c-mode-install-keys)
 
 ;;; Haskell mode
-;; git clone https://github.com/haskell/haskell-mode.git
-;; cd haskell-mode && make
-(push "~/.emacs.d/thirdparty/haskell-mode" load-path)
-(require 'haskell-mode-autoloads)
 
 (define-key global-map (kbd "C-c d h") 'haskell-interactive-switch)
 
@@ -1518,23 +1514,13 @@ C-u to omit verbosity."
 (add-hook 'cmake-mode-hook 'lg-cmake-install-keys)
 
 ;; Make sure rdm/rc/rp are in PATH
-(unless (fboundp 'string-empty-p)
-  ;; rtags makes use of `string-empty-p', that is not in Emacs25
-  (defun string-empty-p (str)
-    (equal str "")))
-
+(require 'subr-x)                       ;for `string-empty-p'
 (require 'rtags)
+
 (cmake-ide-setup)
 
-;; ERC
+;;; ERC
 (setq erc-track-enable-keybindings t)
-
-;;; Haskell mode (package-install 'haskell-mode)
-;(push "~/.emacs.d/thirdparty/haskell-mode" load-path)
-;(require 'haskell-mode-autoloads)
-
-(let ((exwm-debug-on t))
-  (load-library "exwmrc"))
 
 ;;; Nim langugae (package-install 'nim-mode)
 (setq nim-indent-offset 4)              ; default 2 is too small
@@ -1542,14 +1528,17 @@ C-u to omit verbosity."
 (setq nim-compile-default-command
   '("c" "-d:release" "--verbosity:0" "--listFullPaths" "--hint[Processing]:off"))
 
+(defun lg-nim-compile ()
+  "Run cmake or direct nim compilation."
+  (interactive)
+  (if (cmake-ide--locate-cmakelists)
+      (cmake-ide-compile)
+    (nim-compile)))
+
 (defun lg-nim-mode-prepare ()
   (set (make-local-variable 'compilation-read-command) nil)
 
-  (if (cmake-ide--locate-cmakelists)
-      ;; cmake based nim compilation
-      (local-set-key (kbd "C-c c c") 'cmake-ide-compile)
-
-    (local-set-key (kbd "C-c c c") 'nim-compile))
+  (local-set-key (kbd "C-c c c") 'lg-nim-compile)
   )
 
 (add-hook 'nim-mode-hook 'lg-nim-mode-prepare)
@@ -1737,13 +1726,6 @@ I hate this color, so i wont forget to finish macro wheen needed.")
       (list (cons (expand-file-name ".*" "~")
                   (expand-file-name "backups" user-emacs-directory))))
 
-;; Enable EXWM
-(exwm-enable)
-
-;; For .nix files
-(ignore-errors
-  (require 'nix-mode))
-
 ;;; Work specific emacs setup
 (ignore-errors
   (require 'work))
@@ -1752,6 +1734,13 @@ I hate this color, so i wont forget to finish macro wheen needed.")
 (ignore-errors
   (require 'home))
 
+(let ((exwm-debug-on t))
+  (load-library "exwmrc"))
+
+;; Enable EXWM
+(exwm-enable)
+
+;; Load last desktop
 (lg-desktop-load)
 (message (format "+ %s loaded" user-init-file))
 
