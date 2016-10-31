@@ -1464,7 +1464,7 @@ auto-insert-alist)
 
 (setq cmake-ide-make-command "make --no-print-directory")
 
-(defcustom lg-cmake-ide-build-dir "build")
+(defvar lg-cmake-ide-build-dir "build")
 
 (defvar lg-cmake-ide--compile-target "")
 
