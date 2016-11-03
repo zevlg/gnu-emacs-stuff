@@ -232,14 +232,21 @@ If ARG is non-nil delete region, otherwise kill."
       '(miltitran--hf-word multitran--hf-languages
                            lg-multitran--hf-wordfreq multitran--hf-history))
 
-(defun lg-multitran-hook ()
+(defun lg-multitran-customize ()
   (face-remap-add-relative
    'header-line `((:height ,(face-attribute 'default :height)) header-line)))
 
-(add-hook 'multitran-mode-hook 'lg-multitran-hook)
+(add-hook 'multitran-mode-hook 'lg-multitran-customize)
 
 (define-key global-map (kbd "C-c d d") 'multitran)
 (define-key global-map (kbd "C-c d r") 'multitran)
+
+;;}}}
+
+;;{{{ `-- Google translate
+
+(setq google-translate-default-source-language "en"
+      google-translate-default-target-language "ru")
 
 ;;}}}
 
@@ -593,134 +600,6 @@ CSTR can contain special escape sequences:
 
 ;;}}}
 
-(defconst lg-square-64x64-xpm
-  (concat
-   "/* XPM */\n"
-   "static char *mini_square_xpm[] = {\n"
-   "/* columns rows colors chars-per-pixel */\n"
-   "\"64 64 2 1\",\n"
-   "\"       c None s background\",\n"
-   "\".      c gray77 s grido\",\n"
-   "/* pixels */"
-   "\"    .                                                           \"\n,"
-   "\"    .                                                           \"\n,"
-   "\"    .                                                           \"\n,"
-   "\"    .                                                           \"\n,"
-   "\"    .                                                           \"\n,"
-   "\"    .                                                           \"\n,"
-   "\"................................................................\"\n,"
-   "\"    .                                                           \"\n,"
-   "\"    .                                                           \"\n,"
-   "\"    .                                                           \"\n,"
-   "\"    .                                                           \"\n,"
-   "\"    .                                                           \"\n,"
-   "\"    .                                                           \"\n,"
-   "\"    .                                                           \"\n,"
-   "\"    .                                                           \"\n,"
-   "\"    .                                                           \"\n,"
-   "\"    .                                                           \"\n,"
-   "\"    .                                                           \"\n,"
-   "\"    .                                                           \"\n,"
-   "\"    .                                                           \"\n,"
-   "\"    .                                                           \"\n,"
-   "\"    .                                                           \"\n,"
-   "\"    .                                                           \"\n,"
-   "\"    .                                                           \"\n,"
-   "\"    .                                                           \"\n,"
-   "\"    .                                                           \"\n,"
-   "\"    .                                                           \"\n,"
-   "\"    .                                                           \"\n,"
-   "\"    .                                                           \"\n,"
-   "\"    .                                                           \"\n,"
-   "\"    .                                                           \"\n,"
-   "\"    .                                                           \"\n,"
-   "\"    .                                                           \"\n,"
-   "\"    .                                                           \"\n,"
-   "\"    .                                                           \"\n,"
-   "\"    .                                                           \"\n,"
-   "\"    .                                                           \"\n,"
-   "\"    .                                                           \"\n,"
-   "\"    .                                                           \"\n,"
-   "\"    .                                                           \"\n,"
-   "\"    .                                                           \"\n,"
-   "\"    .                                                           \"\n,"
-   "\"    .                                                           \"\n,"
-   "\"    .                                                           \"\n,"
-   "\"    .                                                           \"\n,"
-   "\"    .                                                           \"\n,"
-   "\"    .                                                           \"\n,"
-   "\"    .                                                           \"\n,"
-   "\"    .                                                           \"\n,"
-   "\"    .                                                           \"\n,"
-   "\"    .                                                           \"\n,"
-   "\"    .                                                           \"\n,"
-   "\"    .                                                           \"\n,"
-   "\"    .                                                           \"\n,"
-   "\"    .                                                           \"\n,"
-   "\"    .                                                           \"\n,"
-   "\"    .                                                           \"\n"
-   "\"    .                                                           \"\n"
-   "\"    .                                                           \"\n"
-   "\"    .                                                           \"\n"
-   "\"    .                                                           \"\n"
-   "\"    .                                                           \"\n"
-   "\"    .                                                           \"\n"
-   "\"    .                                                           \"\n"
-   "\"    .                                                           \"\n"
-   "};"))
-
-(defconst lg-square-64x64-xbm
-  (concat
-"\xEF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xEF\xFF\xFF\xFF"
-"\xFF\xFF\xFF\xFF\xEF\xFF\xFF\xFF\xFF\xFF\xFF\xFF"
-"\xEF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xEF\xFF\xFF\xFF"
-"\xFF\xFF\xFF\xFF\xEF\xFF\xFF\xFF\xFF\xFF\xFF\xFF"
-"\x00\x00\x00\x00\x00\x00\x00\x00\xEF\xFF\xFF\xFF"
-"\xFF\xFF\xFF\xFF\xEF\xFF\xFF\xFF\xFF\xFF\xFF\xFF"
-"\xEF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xEF\xFF\xFF\xFF"
-"\xFF\xFF\xFF\xFF\xEF\xFF\xFF\xFF\xFF\xFF\xFF\xFF"
-"\xEF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xEF\xFF\xFF\xFF"
-"\xFF\xFF\xFF\xFF\xEF\xFF\xFF\xFF\xFF\xFF\xFF\xFF"
-"\xEF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xEF\xFF\xFF\xFF"
-"\xFF\xFF\xFF\xFF\xEF\xFF\xFF\xFF\xFF\xFF\xFF\xFF"
-"\xEF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xEF\xFF\xFF\xFF"
-"\xFF\xFF\xFF\xFF\xEF\xFF\xFF\xFF\xFF\xFF\xFF\xFF"
-"\xEF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xEF\xFF\xFF\xFF"
-"\xFF\xFF\xFF\xFF\xEF\xFF\xFF\xFF\xFF\xFF\xFF\xFF"
-"\xEF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xEF\xFF\xFF\xFF"
-"\xFF\xFF\xFF\xFF\xEF\xFF\xFF\xFF\xFF\xFF\xFF\xFF"
-"\xEF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xEF\xFF\xFF\xFF"
-"\xFF\xFF\xFF\xFF\xEF\xFF\xFF\xFF\xFF\xFF\xFF\xFF"
-"\xEF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xEF\xFF\xFF\xFF"
-"\xFF\xFF\xFF\xFF\xEF\xFF\xFF\xFF\xFF\xFF\xFF\xFF"
-"\xEF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xEF\xFF\xFF\xFF"
-"\xFF\xFF\xFF\xFF\xEF\xFF\xFF\xFF\xFF\xFF\xFF\xFF"
-"\xEF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xEF\xFF\xFF\xFF"
-"\xFF\xFF\xFF\xFF\xEF\xFF\xFF\xFF\xFF\xFF\xFF\xFF"
-"\xEF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xEF\xFF\xFF\xFF"
-"\xFF\xFF\xFF\xFF\xEF\xFF\xFF\xFF\xFF\xFF\xFF\xFF"
-"\xEF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xEF\xFF\xFF\xFF"
-"\xFF\xFF\xFF\xFF\xEF\xFF\xFF\xFF\xFF\xFF\xFF\xFF"
-"\xEF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xEF\xFF\xFF\xFF"
-"\xFF\xFF\xFF\xFF\xEF\xFF\xFF\xFF\xFF\xFF\xFF\xFF"
-"\xEF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xEF\xFF\xFF\xFF"
-"\xFF\xFF\xFF\xFF\xEF\xFF\xFF\xFF\xFF\xFF\xFF\xFF"
-"\xEF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xEF\xFF\xFF\xFF"
-"\xFF\xFF\xFF\xFF\xEF\xFF\xFF\xFF\xFF\xFF\xFF\xFF"
-"\xEF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xEF\xFF\xFF\xFF"
-"\xFF\xFF\xFF\xFF\xEF\xFF\xFF\xFF\xFF\xFF\xFF\xFF"
-"\xEF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xEF\xFF\xFF\xFF"
-"\xFF\xFF\xFF\xFF\xEF\xFF\xFF\xFF\xFF\xFF\xFF\xFF"
-"\xEF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xEF\xFF\xFF\xFF"
-"\xFF\xFF\xFF\xFF\xEF\xFF\xFF\xFF\xFF\xFF\xFF\xFF"
-"\xEF\xFF\xFF\xFF\xFF\xFF\xFF\xFF"
-))
-
-;(set-face-background-pixmap
-; 'default nil)
-; (list 64 64 lg-square-64x64-xpm)
-; )
-
 ;;{{{ `-- Pair skeleton
 ;; do not insert newline after skeleton insertation
 (setq skeleton-end-newline nil)
@@ -813,10 +692,6 @@ M-{ causes next skeleton insertation.
 
 (add-hook 'c-mode-hook 'lg-cmode-install-skeletor-pairs)
 (add-hook 'objc-mode-hook 'lg-cmode-install-skeletor-pairs)
-
-;; To automatically start `rdm' if not yet running
-(add-hook 'c-mode-hook 'cmake-ide--mode-hook)
-(add-hook 'objc-mode-hook 'cmake-ide--mode-hook)
 
 ;;}}}
 
@@ -936,11 +811,6 @@ If prefix ARG is specified, then replace region with the evaluation result."
 
 ;;{{{ `-- Editing commands
 
-;; C-cd Prefix for DICT
-(define-key global-map (kbd "C-c d d") 'multitran)
-(define-key global-map (kbd "C-c d r") 'multitran)
-(define-key global-map (kbd "C-c d t") 'google-translate-region)
-
 (defun lg-py-shell ()
   "Switch to python interpreter."
   (interactive)
@@ -985,6 +855,11 @@ If prefix ARG is specified, then replace region with the evaluation result."
 (define-key global-map (kbd "C-c m <RET>") 'hide-cr-mode)
 (define-key global-map (kbd "C-c m p") 'pabbrev-mode)
 
+;; C-cd Prefix for DICT
+(define-key global-map (kbd "C-c d d") 'multitran)
+(define-key global-map (kbd "C-c d r") 'multitran)
+(define-key global-map (kbd "C-c d t") 'google-translate-at-point)
+
 ;;}}}
 
 ;;{{{   `-- C-cl - Prefix for Listing commands
@@ -1007,10 +882,12 @@ If prefix ARG is specified, then replace region with the evaluation result."
 
 ;;}}}
 
-;;{{{   `-- C-cc - Prefix for Count commands
+;;{{{   `-- C-cc - Prefix for Count/Compile commands
 
 (define-key global-map (kbd "C-c c w") 'count-words)
 (define-key global-map (kbd "C-c c m") 'count-matches)
+
+(define-key global-map (kbd "C-c c t") 'lg-compile-test-target)
 
 ;;}}}
 
@@ -1462,46 +1339,155 @@ auto-insert-alist)
 ;;; C-mode
 (push (cons 'c-mode "bsd") c-default-style)
 
-(setq cmake-ide-make-command "make --no-print-directory")
+;; Make sure rdm/rc/rp are in PATH
+(require 'subr-x)                       ; for `string-empty-p'
+(require 'rtags)
 
-(defvar lg-cmake-ide-build-dir "build")
+;; Default color of `rtags-argument-face' is eye bleeding
+;; make it look natural
+(copy-face 'eldoc-highlight-function-argument
+           'rtags-argument-face)
 
-(defvar lg-cmake-ide--compile-target "")
+(defun lg-ensure-rdm-is-running ()
+  "Ensure `rdm' daemon is running."
+  (when (and (featurep 'rtags) (not (get-process "rdm")) (executable-find "rdm"))
+    (with-current-buffer (get-buffer-create " *rdm*")
+      (start-process "rdm" (current-buffer) (executable-find "rdm")))))
 
-(defun lg-cmake-ide-compile ()
-  "Custom target awared cmake compilation."
+(defun lg-rtags-apply-rc (dir)
+  "Run rtag's `rc' utility on directory DIR."
+  (lg-ensure-rdm-is-running)
+
+  (when (and (featurep 'rtag) (executable-find "rc") (get-process "rdm"))
+    (with-current-buffer (get-buffer " *rdm*")
+      (rtags-call-rc "-J" dir))))
+
+(defvar lg-cmake-build-tool-options " --no-print-directory")
+(defvar lg-cmake-build-dir "build")
+
+(defun lg-cmake-project-build-dir ()
+  (let ((prjdir (cmake-project-find-root-directory)))
+    (when prjdir
+      (expand-file-name (concat prjdir lg-cmake-build-dir)))))
+
+(defun lg-compile (&optional target fallback)
+  "cmake awared compile command."
+  (interactive
+   (when current-prefix-arg
+     (list (read-string "Make target: ") nil)))
+
+  (let ((cmk-build-dir (lg-cmake-project-build-dir)))
+    (if cmk-build-dir
+        (let ((compile-cmd
+               (concat "cmake --build "
+                       (shell-quote-argument cbdir)
+                       " -- "
+                       lg-cmake-build-tool-options
+                       " " (or target ""))))
+          (compile compile-cmd)
+          (lg-rtags-apply-rc cmk-build-dir))
+
+      (if fallback
+          (funcall fallback)
+        (compile compile-command)))))
+
+(defun lg-compile-ctest-target ()
+  "Compile 'test' target, assuming `ctest' will be executed."
   (interactive)
-  (let ((cmkdir (cmake-ide--locate-cmakelists)))
-    (if (and cmkdir (file-exists-p (concat cmkdir "/build")))
-        (let ((cmake-ide-compile-command
-               (concat (cmake-ide--get-compile-command (concat cmkdir "/build"))
-                       " " lg-cmake-ide--compile-target)))
-          (cmake-ide-compile))
-      (cmake-ide-compile))))
+  (lg-compile "ARGS=\"--output-on-failure\" test"))
 
-(defun lg-compile-test-target (no-verbose)
-  "*Run ctest, by make 'test' target.
-C-u to omit verbosity."
-  (interactive "P")
-  (let ((lg-cmake-ide--compile-target
-         (concat (if no-verbose "" "ARGS=\"--output-on-failure\" ") "test")))
-    (lg-cmake-ide-compile)))
+;;; cmake awared disassembler
+(defun lg-file-name-reverse-split (fname)
+  "Split filename's FNAME in reverse order."
+  (unless (string-empty-p fname)
+    (cons
+     (file-name-nondirectory fname)
+     (lg-file-name-reverse-split
+      (substring (or (file-name-directory fname) "/") nil -1)))))
 
-(defun lg-c-mode-install-keys ()
+(defun lg-c-object-file (srcfile)
+  "Find correspoinding object file for SRCFILE."
+  (let ((prjdir (cmake-project-find-root-directory)))
+    (when (and prjdir (string-prefix-p prjdir srcfile))
+      (let* ((relsrcfile (substring srcfile (length prjdir)))
+             (reldir (file-name-directory relsrcfile))
+             (objname (concat (file-name-nondirectory relsrcfile) ".o"))
+             ;; TODO: multiple subdirectories support
+             (outfile (expand-file-name
+                       (concat prjdir lg-cmake-build-dir
+                               "/" reldir "/CMakeFiles/"
+                               (substring reldir nil -1) ".dir/" objname))))
+        (message "Object file: %S / %S" outfile (file-exists-p outfile))
+        (when (file-exists-p outfile)
+          outfile)))))
+
+(defun lg-disaster-objfile (srcfile obj-file line)
+  ;; Cut&Paste from disaster.el
+  (require 'disaster)
+
+  (let ((dump (format "%s %s" disaster-objdump obj-file))
+        (line-text (save-excursion
+                     (buffer-substring-no-properties
+                      (progn (beginning-of-line) (point))
+                      (progn (end-of-line) (point)))))
+        (asmbuf (get-buffer-create disaster-buffer-assembly)))
+
+    (when (eq 0 (progn
+                  (message (format "Running: %s" dump))
+                  (shell-command dump asmbuf)))
+      (with-current-buffer asmbuf
+        ;; saveplace.el will prevent us from hopping to a line.
+        (set (make-local-variable 'save-place) nil)
+        (asm-mode)
+        (disaster--shadow-non-assembly-code))
+      (let ((oldbuf (current-buffer)))
+        (switch-to-buffer-other-window asmbuf)
+        (goto-char 0)
+        (if (or (search-forward line-text nil t)
+                (search-forward file-line nil t))
+            (progn
+              (recenter)
+              (overlay-put (make-overlay (save-excursion
+                                           (beginning-of-line)
+                                           (point))
+                                         (save-excursion
+                                           (forward-line)
+                                           (beginning-of-line)
+                                           (point)))
+                           'face 'region))
+          (message "Couldn't find corresponding assembly line."))
+        (switch-to-buffer-other-window oldbuf)))
+    ))
+
+(defun lg-disaster ()
+  "Cmake awared disaster."
+  (interactive)
+  (let* ((srcfile (buffer-file-name))
+         (line (line-number-at-pos))
+         (objfile (lg-c-object-file srcfile)))
+    (if objfile
+        (lg-disaster-objfile srcfile objfile line)
+      (disaster srcfile line))))
+
+(defun lg-c-mode-customize ()
   (c-toggle-electric-state t)
+
+  ;; Nice rtag based eldoc
+  (lg-ensure-rdm-is-running)
+  (setq eldoc-documentation-function 'rtags-eldoc)
 
   (local-set-key (kbd "M-.") 'rtags-find-symbol)
 
   ;; switch .c <--> .h files
   (local-set-key (kbd "C-c C-h") 'ff-find-related-file)
 
-  (local-set-key (kbd "C-c c c") 'lg-cmake-ide-compile)
+  (local-set-key (kbd "C-c c c") 'lg-compile)
   (local-set-key (kbd "C-c c t") 'lg-compile-test-target)
-  (local-set-key (kbd "C-c c d") 'disaster) ; inplace disassembler
+  (local-set-key (kbd "C-c c d") 'lg-disaster) ; inplace disassembler
   (local-set-key (kbd "C-c C-s") 'lg-switch-to-scratch))
 
-(add-hook 'c-mode-hook 'lg-c-mode-install-keys)
-(add-hook 'c++-mode-hook 'lg-c-mode-install-keys)
+(add-hook 'c-mode-hook 'lg-c-mode-customize)
+(add-hook 'c++-mode-hook 'lg-c-mode-customize)
 
 ;;; Haskell mode
 
@@ -1512,12 +1498,6 @@ C-u to omit verbosity."
   (local-set-key (kbd "C-c h") 'cmake-help))
 
 (add-hook 'cmake-mode-hook 'lg-cmake-install-keys)
-
-;; Make sure rdm/rc/rp are in PATH
-(require 'subr-x)                       ;for `string-empty-p'
-(require 'rtags)
-
-(cmake-ide-setup)
 
 ;;; ERC
 (setq erc-track-enable-keybindings t)
@@ -1531,17 +1511,20 @@ C-u to omit verbosity."
 (defun lg-nim-compile ()
   "Run cmake or direct nim compilation."
   (interactive)
-  (if (cmake-ide--locate-cmakelists)
-      (cmake-ide-compile)
-    (nim-compile)))
+  (lg-compile nil #'nim-compile))
 
-(defun lg-nim-mode-prepare ()
+(defun lg-nim-mode-customize ()
   (set (make-local-variable 'compilation-read-command) nil)
+
+  ;; Enable completion(M-<tab>)/find-symbol(M-.)/etc
+  ;; requires `nimsuggest' (nimble install nimsuggest)
+  (when nim-nimsuggest-path
+    (nimsuggest-mode 1))
 
   (local-set-key (kbd "C-c c c") 'lg-nim-compile)
   )
 
-(add-hook 'nim-mode-hook 'lg-nim-mode-prepare)
+(add-hook 'nim-mode-hook 'lg-nim-mode-customize)
 
 ;; Catch messages from nim compiler
 ;; Implies  --listFullPaths  nim flag
@@ -1741,7 +1724,7 @@ I hate this color, so i wont forget to finish macro wheen needed.")
 (exwm-enable)
 
 ;; Load last desktop
-(lg-desktop-load)
+;(lg-desktop-load)
 (message (format "+ %s loaded" user-init-file))
 
 ;;;;
@@ -1752,7 +1735,7 @@ I hate this color, so i wont forget to finish macro wheen needed.")
  ;; If there is more than one, they won't work right.
  '(package-selected-packages
    (quote
-    (irony-eldoc multitran fill-column-indicator rtags auto-complete-clang disaster haskell-mode autopair nim-mode irony cmake-mode git-gutter cmake-ide dash auctex undo-tree elpy)))
+    (google-translate cmake-project coverlay irony-eldoc multitran fill-column-indicator rtags auto-complete-clang disaster haskell-mode autopair nim-mode irony cmake-mode git-gutter dash auctex undo-tree elpy)))
  '(send-mail-function (quote smtpmail-send-it)))
 (custom-set-faces
  ;; custom-set-faces was added by Custom.
