@@ -1343,6 +1343,8 @@ auto-insert-alist)
 (require 'subr-x)                       ; for `string-empty-p'
 (require 'rtags)
 
+(autoload 'cmake-project--upward-find-last-file "cmake-project")
+
 ;; Default color of `rtags-argument-face' is eye bleeding
 ;; make it look natural
 (copy-face 'eldoc-highlight-function-argument
@@ -1365,10 +1367,16 @@ auto-insert-alist)
 (defvar lg-cmake-build-tool-options " --no-print-directory")
 (defvar lg-cmake-build-dir "build")
 
+(defun lg-cmake-project-root-dir ()
+  (let ((cmksrc (cmake-project--upward-find-last-file "CMakeLists.txt")))
+    (and cmksrc (file-name-as-directory cmksrc))))
+
 (defun lg-cmake-project-build-dir ()
-  (let ((prjdir (cmake-project-find-root-directory)))
-    (when prjdir
-      (expand-file-name (concat prjdir lg-cmake-build-dir)))))
+  (let* ((prjroot (lg-cmake-project-root-dir))
+         (buildir (and prjroot
+                       (expand-file-name (concat prjroot lg-cmake-build-dir)))))
+    (when (and buildir (file-exists-p buildir))
+      buildir)))
 
 (defun lg-compile (&optional target fallback)
   "cmake awared compile command."
@@ -1380,7 +1388,7 @@ auto-insert-alist)
     (if cmk-build-dir
         (let ((compile-cmd
                (concat "cmake --build "
-                       (shell-quote-argument cbdir)
+                       (shell-quote-argument cmk-build-dir)
                        " -- "
                        lg-cmake-build-tool-options
                        " " (or target ""))))
@@ -1407,7 +1415,7 @@ auto-insert-alist)
 
 (defun lg-c-object-file (srcfile)
   "Find correspoinding object file for SRCFILE."
-  (let ((prjdir (cmake-project-find-root-directory)))
+  (let ((prjdir (lg-cmake-project-root-dir)))
     (when (and prjdir (string-prefix-p prjdir srcfile))
       (let* ((relsrcfile (substring srcfile (length prjdir)))
              (reldir (file-name-directory relsrcfile))
@@ -1501,6 +1509,7 @@ auto-insert-alist)
 
 ;;; ERC
 (setq erc-track-enable-keybindings t)
+(setq erc-nick "zevlg")
 
 ;;; Nim langugae (package-install 'nim-mode)
 (setq nim-indent-offset 4)              ; default 2 is too small
@@ -1570,6 +1579,10 @@ auto-insert-alist)
 (autoload 'markdown-mode "markdown-mode"
   "Major mode for editing Markdown files" t)
 (add-to-list 'auto-mode-alist '("\\.md\\'" . markdown-mode))
+
+;;; ReStructured text mode
+(autoload 'rst-mode "rst" "Major mode for editing reStructuredText" t)
+(setq rst-mode-lazy nil)
 
 ;;; Diff-mode
 (defun lg-diff-revert-hunk ()
@@ -1735,7 +1748,7 @@ I hate this color, so i wont forget to finish macro wheen needed.")
  ;; If there is more than one, they won't work right.
  '(package-selected-packages
    (quote
-    (google-translate cmake-project coverlay irony-eldoc multitran fill-column-indicator rtags auto-complete-clang disaster haskell-mode autopair nim-mode irony cmake-mode git-gutter dash auctex undo-tree elpy)))
+    (folding origami git-gutter-fringe+ google-translate cmake-project coverlay irony-eldoc multitran fill-column-indicator rtags auto-complete-clang disaster haskell-mode autopair nim-mode irony cmake-mode git-gutter dash auctex undo-tree elpy)))
  '(send-mail-function (quote smtpmail-send-it)))
 (custom-set-faces
  ;; custom-set-faces was added by Custom.
