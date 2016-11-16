@@ -1395,18 +1395,18 @@ auto-insert-alist)
 
   (let ((cmk-build-dir (lg-cmake-project-build-dir)))
     (if cmk-build-dir
-        (let ((compile-cmd
+        (let ((compile-command
                (concat "cmake --build "
                        (shell-quote-argument cmk-build-dir)
                        " -- "
                        lg-cmake-build-tool-options
                        " " (or target ""))))
-          (compile compile-cmd)
+          (compile compile-command)
           (lg-rtags-apply-rc cmk-build-dir))
 
       (if fallback
           (funcall fallback)
-        (compile compile-command)))))
+        (call-interactively 'smart-compile)))))
 
 (defun lg-compile-ctest-target ()
   "Compile 'test' target, assuming `ctest' will be executed."
@@ -1757,7 +1757,7 @@ I hate this color, so i wont forget to finish macro wheen needed.")
  ;; If there is more than one, they won't work right.
  '(package-selected-packages
    (quote
-    (rudel folding origami git-gutter-fringe+ google-translate cmake-project coverlay irony-eldoc multitran fill-column-indicator rtags auto-complete-clang disaster haskell-mode autopair nim-mode irony cmake-mode git-gutter dash auctex undo-tree elpy)))
+    (smart-compile rudel folding origami git-gutter-fringe+ google-translate cmake-project coverlay irony-eldoc multitran fill-column-indicator rtags auto-complete-clang disaster haskell-mode autopair nim-mode irony cmake-mode git-gutter dash auctex undo-tree elpy)))
  '(send-mail-function (quote smtpmail-send-it)))
 (custom-set-faces
  ;; custom-set-faces was added by Custom.
