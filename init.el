@@ -364,6 +364,14 @@ If prefix ARG is supplied, do not move point."
 (define-key global-map (kbd "C-c C-c") 'comment-region)
 (define-key global-map (kbd "C-c ;") 'comment-region)
 
+(defun lg-backslash-region ()
+  "Backslash current region"
+  (interactive)
+  (let ((tab-width 1))
+    (call-interactively 'sh-backslash-region)))
+
+(define-key global-map (kbd "C-c C-\\") 'lg-backslash-region)
+
 (defun lg-activate-region ()
   "Activate previously active region."
   (interactive)
@@ -823,6 +831,7 @@ If prefix ARG is specified, then replace region with the evaluation result."
 ;; C-ce Editing prefix
 (define-key global-map (kbd "C-c e c") 'checkdoc)
 (define-key global-map (kbd "C-c e w") 'whitespace-cleanup)
+(define-key global-map (kbd "C-c e a") 'align)
 ;;(define-key global-map (kbd "C-c e l") 'lg-fix-long-lines)
 ;;(define-key global-map (kbd "C-c e i") 'lg-ispell-region-or-buffer)
 ;;(define-key global-map (kbd "C-c e y") 'yofy)
@@ -1748,7 +1757,7 @@ I hate this color, so i wont forget to finish macro wheen needed.")
  ;; If there is more than one, they won't work right.
  '(package-selected-packages
    (quote
-    (folding origami git-gutter-fringe+ google-translate cmake-project coverlay irony-eldoc multitran fill-column-indicator rtags auto-complete-clang disaster haskell-mode autopair nim-mode irony cmake-mode git-gutter dash auctex undo-tree elpy)))
+    (rudel folding origami git-gutter-fringe+ google-translate cmake-project coverlay irony-eldoc multitran fill-column-indicator rtags auto-complete-clang disaster haskell-mode autopair nim-mode irony cmake-mode git-gutter dash auctex undo-tree elpy)))
  '(send-mail-function (quote smtpmail-send-it)))
 (custom-set-faces
  ;; custom-set-faces was added by Custom.
