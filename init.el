@@ -364,6 +364,7 @@ If prefix ARG is supplied, do not move point."
 (define-key global-map (kbd "C-c C-c") 'comment-region)
 (define-key global-map (kbd "C-c ;") 'comment-region)
 
+(autoload 'sh-backslash-region "sh-script" "" t)
 (defun lg-backslash-region ()
   "Backslash current region"
   (interactive)
@@ -556,6 +557,19 @@ CSTR can contain special escape sequences:
   (local-set-key (kbd "<backtab>") 'git-prev-file))
 
 (add-hook 'git-status-mode-hook 'lg-git-status-install-keys)
+
+;; Paste to gist
+(defun lg-gist-region (arg)
+  "Paste region to gist.
+If prefix ARG is specified, insert resulting url into current buffer."
+  (interactive "P")
+  (call-interactively 'gist-region)
+
+  ;; GNU Emacs keeps region active after evaluation, so force
+  ;; deactivation
+  (deactivate-mark)
+  (when arg
+    (yank)))
 
 ;;}}}
 
@@ -896,7 +910,7 @@ If prefix ARG is specified, then replace region with the evaluation result."
 (define-key global-map (kbd "C-c c w") 'count-words)
 (define-key global-map (kbd "C-c c m") 'count-matches)
 
-(define-key global-map (kbd "C-c c t") 'lg-compile-test-target)
+(define-key global-map (kbd "C-c c t") 'lg-compile-ctest-target)
 
 ;;}}}
 
@@ -910,8 +924,10 @@ If prefix ARG is specified, then replace region with the evaluation result."
 (define-key global-map (kbd "C-c g =") 'vc-diff)
 (define-key global-map (kbd "C-c g p") 'vc-push)
 (define-key global-map (kbd "C-c g u") 'vc-update)
-
 (define-key global-map (kbd "C-c g s") 'git-status)
+
+(define-key global-map (kbd "C-c g r") 'lg-gist-region)
+(define-key global-map (kbd "C-c g l") 'gist-list)
 
 ;;}}}
 
@@ -1499,7 +1515,7 @@ auto-insert-alist)
   (local-set-key (kbd "C-c C-h") 'ff-find-related-file)
 
   (local-set-key (kbd "C-c c c") 'lg-compile)
-  (local-set-key (kbd "C-c c t") 'lg-compile-test-target)
+  (local-set-key (kbd "C-c c t") 'lg-compile-ctest-target)
   (local-set-key (kbd "C-c c d") 'lg-disaster) ; inplace disassembler
   (local-set-key (kbd "C-c C-s") 'lg-switch-to-scratch))
 
@@ -1757,7 +1773,7 @@ I hate this color, so i wont forget to finish macro wheen needed.")
  ;; If there is more than one, they won't work right.
  '(package-selected-packages
    (quote
-    (smart-compile rudel folding origami git-gutter-fringe+ google-translate cmake-project coverlay irony-eldoc multitran fill-column-indicator rtags auto-complete-clang disaster haskell-mode autopair nim-mode irony cmake-mode git-gutter dash auctex undo-tree elpy)))
+    (wolfram circe gist yaml-mode smart-compile rudel folding origami git-gutter-fringe+ google-translate cmake-project coverlay irony-eldoc multitran fill-column-indicator rtags auto-complete-clang disaster haskell-mode autopair nim-mode irony cmake-mode git-gutter dash auctex undo-tree elpy)))
  '(send-mail-function (quote smtpmail-send-it)))
 (custom-set-faces
  ;; custom-set-faces was added by Custom.
