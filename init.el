@@ -567,9 +567,7 @@ If prefix ARG is specified, insert resulting url into current buffer."
 
   ;; GNU Emacs keeps region active after evaluation, so force
   ;; deactivation
-  (deactivate-mark)
-  (when arg
-    (yank)))
+  (deactivate-mark))
 
 ;;}}}
 
