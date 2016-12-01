@@ -499,6 +499,9 @@ CSTR can contain special escape sequences:
 
 ;;{{{ `-- Grep
 
+;; Do not ask about saving some files
+(setq grep-save-buffers nil)
+
 ;; Use previous search regex if default tag is not found
 (defun lg-find-tag-default ()
   "Use previous grep as default tag."
@@ -1352,6 +1355,15 @@ auto-insert-alist)
 
 (define-key global-map (kbd "C-c w j") 'webjump)
 
+(defun lg-browse-url-at-point (&optional arg)
+  (interactive "P")
+  (let ((url (browse-url-url-at-point)))
+    (if url
+        (call-interactively 'browse-url-at-point)
+      (call-interactively 'browse-url))))
+
+(define-key global-map (kbd "C-c w w") 'lg-browse-url-at-point)
+
 ;;}}}
 
 ;;; Compilation
@@ -1760,7 +1772,7 @@ I hate this color, so i wont forget to finish macro wheen needed.")
 (exwm-enable)
 
 ;; Load last desktop
-;(lg-desktop-load)
+(lg-desktop-load)
 (message (format "+ %s loaded" user-init-file))
 
 ;;;;
