@@ -54,6 +54,7 @@
           (exwm-wconf-pop-to-buffer (exwm--id->buffer x))))
 
 (exwm-input-set-key (kbd "H-r") 'exwm-reset)
+(exwm-input-set-key (kbd "H-g") 'exwm-input-release-keyboard)
 ;; Bind a key to switch workspace interactively
 ;;(exwm-input-set-key (kbd "H-w") 'exwm-workspace-switch)
 
