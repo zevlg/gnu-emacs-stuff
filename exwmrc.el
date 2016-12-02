@@ -38,6 +38,13 @@
 (with-exwm-wconf-header-line
  (display-time-mode 1))
 
+(when battery-status-function
+  (setq battery-status-function 'battery-upower)
+  (setq battery-mode-line-format " [%p%%]  ")
+
+  (with-exwm-wconf-header-line
+   (display-battery-mode 1)))
+
 ;; Restore wconf on `C-x #'
 (add-hook 'server-done-hook 'exwm-wconf-restore-buffer)
 
