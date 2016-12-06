@@ -562,11 +562,12 @@ CSTR can contain special escape sequences:
 (add-hook 'git-status-mode-hook 'lg-git-status-install-keys)
 
 ;; Paste to gist
-(defun lg-gist-region (arg)
+(defun lg-gist-region (begin end &optional arg)
   "Paste region to gist.
-If prefix ARG is specified, insert resulting url into current buffer."
-  (interactive "P")
-  (call-interactively 'gist-region)
+If prefix ARG is specified - create public gist."
+  (interactive "r\nP")
+
+  (gist-region begin end (not arg))
 
   ;; GNU Emacs keeps region active after evaluation, so force
   ;; deactivation
@@ -833,6 +834,8 @@ If prefix ARG is specified, then replace region with the evaluation result."
 ;;}}}
 
 ;;{{{ `-- Editing commands
+
+(setq python-shell-interpreter "python3")
 
 (defun lg-py-shell ()
   "Switch to python interpreter."
@@ -1534,7 +1537,23 @@ auto-insert-alist)
 
 ;;; Haskell mode
 
+(defun hs-lint-compile (&optional prfxarg)
+  "Run compile."
+  (interactive "P")
+  (lg-compile (concat "hlint" " " buffer-file-name)))
+
+(defun lg-haskell-install-keys ()
+  (define-key haskell-mode-map (kbd "C-c c c") 'hs-lint-compile)
+
+  (define-key haskell-mode-map (kbd "C-c e r") 'lg-haskell-eval-region)
+  (define-key haskell-mode-map (kbd "C-c e b") 'haskell-ghci-load-file)
+;  (define-key haskell-mode-map (kbd "C-x C-e") 'lg-haskell-eval-phrase)
+  )
+
+(add-hook 'haskell-mode-hook 'lg-haskell-install-keys)
+
 (define-key global-map (kbd "C-c d h") 'haskell-interactive-switch)
+
 
 ;;; Cmake mode
 (defun lg-cmake-install-keys ()
@@ -1783,7 +1802,7 @@ I hate this color, so i wont forget to finish macro wheen needed.")
  ;; If there is more than one, they won't work right.
  '(package-selected-packages
    (quote
-    (wolfram circe gist yaml-mode smart-compile rudel folding origami git-gutter-fringe+ google-translate cmake-project coverlay irony-eldoc multitran fill-column-indicator rtags auto-complete-clang disaster haskell-mode autopair nim-mode irony cmake-mode git-gutter dash auctex undo-tree elpy)))
+    (gitlab ponylang-mode pycoverage wolfram circe gist yaml-mode smart-compile rudel folding origami git-gutter-fringe+ google-translate cmake-project coverlay irony-eldoc multitran fill-column-indicator rtags auto-complete-clang disaster haskell-mode autopair nim-mode irony cmake-mode git-gutter dash auctex undo-tree elpy)))
  '(send-mail-function (quote smtpmail-send-it)))
 (custom-set-faces
  ;; custom-set-faces was added by Custom.
