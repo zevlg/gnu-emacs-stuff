@@ -38,7 +38,8 @@
 (with-exwm-wconf-header-line
  (display-time-mode 1))
 
-(when battery-status-function
+(when (and (boundp 'battery-status-function)
+           battery-status-function)
   (setq battery-status-function 'battery-upower)
   (setq battery-mode-line-format " [%p%%]  ")
 
