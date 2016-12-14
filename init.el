@@ -613,17 +613,6 @@ If prefix ARG is specified - create public gist."
 
 ;;}}}
 
-;;{{{ `-- ELIM
-
-;; for prpl-mra
-(ignore-errors
-  (add-to-list 'load-path "~/.emacs.d/elim/elisp")
-  (load-library "garak")
-
-  (tracking-mode 1))
-
-;;}}}
-
 ;;{{{ `-- Pair skeleton
 ;; do not insert newline after skeleton insertation
 (setq skeleton-end-newline nil)
@@ -721,27 +710,27 @@ M-{ causes next skeleton insertation.
 
 ;;{{{ `-- Highlight current line
 
-(setq highline-priority 1000)
+(defface highlight-current-line-face
+  '((t (:background "greenyellow")))
+    "Face used to highlight current line."
+  :group 'highlight-current-line)
 
-;;; Highlight current line highline.el customization
-(autoload 'highline-local-on "highline" nil nil)
-(autoload 'highline-mode "highline" nil t)
-
-(defface highlight-line-face
-  '((((class color) (background dark))
-     (:background "navy"))
-    (((class color) (background light))
-     (:background "greenyellow"))
-    (t (:background "greenyellow")))
-  "Face for highline mode.")
-(setq highline-face 'highlight-line-face)
+(defun highline-local-on ()
+  "Ensure current line is highligted."
+  (interactive)
+  (unless highlight-current-line-minor-mode
+    (highlight-current-line-minor-mode)))
 
 ;;; Use highline in several major modes by default
 (add-hook 'ibuffer-hooks 'highline-local-on)
 (add-hook 'cvs-mode-hook 'highline-local-on)
 
-(add-hook 'gnus-group-prepare-hook 'highline-local-on)
-(add-hook 'gnus-summary-prepare-hook 'highline-local-on)
+;;}}}
+
+;;{{{ `-- ELDOC customization
+
+;; Fast refresh
+(setq eldoc-idle-delay 0.1)
 
 ;;}}}
 
@@ -870,7 +859,7 @@ If prefix ARG is specified, then replace region with the evaluation result."
 (define-key global-map (kbd "C-c m o") 'occur)
 (define-key global-map (kbd "C-c m |") 'vertical-mode)
 (define-key global-map (kbd "C-c m v") 'fci-mode)
-(define-key global-map (kbd "C-c m h") 'highline-mode)
+(define-key global-map (kbd "C-c m h") 'highlight-current-line-minor-mode)
 (define-key global-map (kbd "C-c m w") 'whitespace-mode)
 (define-key global-map (kbd "C-c m F") 'flyspell-mode)
 (define-key global-map (kbd "C-c m i") 'flyspell-mode)
@@ -1802,7 +1791,7 @@ I hate this color, so i wont forget to finish macro wheen needed.")
  ;; If there is more than one, they won't work right.
  '(package-selected-packages
    (quote
-    (gitlab ponylang-mode pycoverage wolfram circe gist yaml-mode smart-compile rudel folding origami git-gutter-fringe+ google-translate cmake-project coverlay irony-eldoc multitran fill-column-indicator rtags auto-complete-clang disaster haskell-mode autopair nim-mode irony cmake-mode git-gutter dash auctex undo-tree elpy)))
+    (highlight-current-line ein gitlab ponylang-mode pycoverage wolfram circe gist yaml-mode smart-compile rudel folding origami git-gutter-fringe+ google-translate cmake-project coverlay irony-eldoc multitran fill-column-indicator rtags auto-complete-clang disaster haskell-mode autopair nim-mode irony cmake-mode git-gutter dash auctex undo-tree elpy)))
  '(send-mail-function (quote smtpmail-send-it)))
 (custom-set-faces
  ;; custom-set-faces was added by Custom.
