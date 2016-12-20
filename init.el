@@ -831,7 +831,8 @@ If prefix ARG is specified, then replace region with the evaluation result."
   (interactive)
   (unless (python-shell-get-process)
     (run-python))
-  (python-shell-switch-to-shell))
+  (pop-to-buffer
+   (process-buffer (python-shell-get-process-or-error))))
 
 (define-key global-map (kbd "C-c d p") 'lg-py-shell)
 

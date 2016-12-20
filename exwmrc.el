@@ -40,6 +40,7 @@
 
 (when (and (boundp 'battery-status-function)
            battery-status-function)
+  (require 'dbus)
   (setq battery-status-function 'battery-upower)
   (setq battery-mode-line-format " [%p%%]  ")
 
