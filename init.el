@@ -255,6 +255,7 @@ If ARG is non-nil delete region, otherwise kill."
 ;;; Remove annoying iconifying
 (define-key global-map (kbd "C-z") 'nil)
 
+(define-key global-map (kbd "C-=") 'what-cursor-position)
 (define-key global-map (kbd "C-x M-=") 'count-words)
 
 ;;}}}
