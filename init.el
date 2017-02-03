@@ -407,6 +407,17 @@ ADDR is string in form [<HOST>:]<PORT>"
     (switch-to-buffer (make-comint (concat "netcat-" addr) remote))
     (run-hooks 'netcat-hook)))
 
+(defun lg-fixup-whitespace (arg)
+  "Without prefix ARG run `fixup-whitespace'.
+With prefix ARG run `just-one-space'."
+  (interactive "P")
+  (if arg
+      (just-one-space)
+    (fixup-whitespace)))
+
+(define-key global-map (kbd "M-\\") 'fixup-whitespace)
+(define-key global-map (kbd "C-c <space>") 'fixup-whitespace)
+
 ;;}}}
 
 ;;{{{ `-- Mini calculator
@@ -1397,7 +1408,14 @@ auto-insert-alist)
 (defvar lg-cmake-build-dir "build")
 
 (defun lg-cmake-project-root-dir ()
-  (let ((cmksrc (cmake-project--upward-find-last-file "CMakeLists.txt")))
+  (let ((cmksrc (or (cmake-project--upward-find-last-file "CMakeLists.txt")
+                    ;; parent and parent of parent as well
+                    (cmake-project--upward-find-last-file
+                     "CMakeLists.txt" (expand-file-name ".."))
+                    (cmake-project--upward-find-last-file
+                     "CMakeLists.txt" (expand-file-name "../.."))
+                    )
+                ))
     (and cmksrc (file-name-as-directory cmksrc))))
 
 (defun lg-cmake-project-build-dir ()
