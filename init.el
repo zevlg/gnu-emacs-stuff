@@ -218,7 +218,7 @@ If ARG is non-nil delete region, otherwise kill."
 
 ;;; Interface to multitran.com
 ;;
-;; https://raw.githubusercontent.com/zevlg/gnu-emacs-stuff/master/multitran.el
+;; https://github.com/zevlg/multitran.el/
 ;; https://raw.githubusercontent.com/zevlg/emacs-stuff/master/wordfreq.el
 (autoload 'multitran "multitran" nil t)
 (autoload 'wordfreq-find "wordfreq" nil t)
@@ -410,13 +410,17 @@ ADDR is string in form [<HOST>:]<PORT>"
 (defun lg-fixup-whitespace (arg)
   "Without prefix ARG run `fixup-whitespace'.
 With prefix ARG run `just-one-space'."
-  (interactive "P")
-  (if arg
-      (just-one-space)
-    (fixup-whitespace)))
+  (interactive "*P")
+  (save-excursion
+    (delete-horizontal-space)
+    (when (or arg
+              (not (or (looking-at "$\\|^\\|\\s)")
+                       (save-excursion (forward-char -1)
+                                       (looking-at "$\\|\\s(\\|\\s'")))))
+      (insert ?\s))))
 
-(define-key global-map (kbd "M-\\") 'fixup-whitespace)
-(define-key global-map (kbd "C-c <space>") 'fixup-whitespace)
+(define-key global-map (kbd "M-\\") 'lg-fixup-whitespace)
+(define-key global-map (kbd "C-c <space>") 'lg-fixup-whitespace)
 
 ;;}}}
 
@@ -1379,6 +1383,9 @@ auto-insert-alist)
 ;;; C-mode
 (push (cons 'c-mode "bsd") c-default-style)
 
+;; `#' aligns to left electrically
+(setq c-electric-pound-behavior '(alignleft))
+
 ;; Make sure rdm/rc/rp are in PATH
 (require 'subr-x)                       ; for `string-empty-p'
 (require 'rtags)
@@ -1811,7 +1818,7 @@ I hate this color, so i wont forget to finish macro wheen needed.")
  ;; If there is more than one, they won't work right.
  '(package-selected-packages
    (quote
-    (highlight-current-line ein gitlab ponylang-mode pycoverage wolfram circe gist yaml-mode smart-compile rudel folding origami git-gutter-fringe+ google-translate cmake-project coverlay irony-eldoc multitran fill-column-indicator rtags auto-complete-clang disaster haskell-mode autopair nim-mode irony cmake-mode git-gutter dash auctex undo-tree elpy)))
+    (lua-mode highlight-current-line ein gitlab ponylang-mode pycoverage wolfram circe gist yaml-mode smart-compile rudel folding origami git-gutter-fringe+ google-translate cmake-project coverlay irony-eldoc multitran fill-column-indicator rtags auto-complete-clang disaster haskell-mode autopair nim-mode irony cmake-mode git-gutter dash auctex undo-tree elpy)))
  '(send-mail-function (quote smtpmail-send-it)))
 (custom-set-faces
  ;; custom-set-faces was added by Custom.
