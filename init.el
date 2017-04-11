@@ -726,6 +726,9 @@ M-{ causes next skeleton insertation.
 
 ;;{{{ `-- Highlight current line
 
+(defvar highlight-current-line-minor-mode nil)
+(autoload 'highlight-current-line-minor-mode "highlight-current-line")
+
 (defface highlight-current-line-face
   '((t (:background "greenyellow")))
     "Face used to highlight current line."
@@ -962,6 +965,8 @@ If prefix ARG is specified, then replace region with the evaluation result."
   (local-set-key (kbd "C-c e s") 'py-execute-string)
   (local-set-key (kbd "C-c C-c") 'py-comment-region)
   (local-set-key (kbd "C-j") 'lg-insert-nl-at-eol)
+
+  (local-set-key (kbd "C-c C-s") 'lg-switch-to-scratch)
   )
 
 (add-hook 'python-mode-hook 'lg-py-install-keys)
@@ -1532,7 +1537,8 @@ auto-insert-alist)
       (disaster srcfile line))))
 
 (defun lg-c-mode-customize ()
-  (c-toggle-electric-state t)
+  ; enables electric-indent-mode
+  ;  (c-toggle-electric-state t)
 
   ;; Nice rtag based eldoc
   (lg-ensure-rdm-is-running)
@@ -1642,6 +1648,14 @@ auto-insert-alist)
   )
 
 (add-hook 'lua-mode-hook 'lg-lua-install-keys)
+
+;;; Pony lang mode
+
+(defun lg-pony-mode-customize ()
+  (local-set-key (kbd "C-c c c") 'lg-compile)
+  (local-set-key (kbd "C-c c t") 'lg-compile-ctest-target))
+  
+(add-hook 'ponylang-mode-hook 'lg-pony-mode-customize)
 
 ;;; MarkDown mode
 ;; https://raw.githubusercontent.com/defunkt/markdown-mode/master/markdown-mode.el
