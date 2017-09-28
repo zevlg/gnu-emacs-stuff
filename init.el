@@ -38,7 +38,7 @@
 
 ;; See https://github.com/zevlg/RictyDiminishedL
 (set-face-attribute 'default nil :family "RictyDiminishedL")
-(set-face-attribute 'default nil :height 300)
+(set-face-attribute 'default nil :height 360)
 
 (setq inhibit-splash-screen t)
 (setq enable-recursive-minibuffers t)
@@ -204,6 +204,10 @@ If ARG is non-nil delete region, otherwise kill."
 ;; Killing bindings
 (define-key global-map (kbd "M-<f4>") 'lg-kill-current-buffer)
 (define-key global-map (kbd "C-x k") 'lg-kill-current-buffer)
+
+;; backward kill sexp
+(define-key global-map (kbd "C-M-<backspace>") (kbd "C-M-p C-M-k"))
+(define-key global-map (kbd "C-x M-<backspace>") (kbd "C-M-p C-M-k"))
 
 ;;{{{ `-- Whitespace
 
@@ -967,6 +971,7 @@ If prefix ARG is specified, then replace region with the evaluation result."
   (local-set-key (kbd "C-j") 'lg-insert-nl-at-eol)
 
   (local-set-key (kbd "C-c C-s") 'lg-switch-to-scratch)
+  (define-key elpy-mode-map (kbd "C-c C-s") 'lg-switch-to-scratch)
   )
 
 (add-hook 'python-mode-hook 'lg-py-install-keys)
@@ -1832,7 +1837,7 @@ I hate this color, so i wont forget to finish macro wheen needed.")
  ;; If there is more than one, they won't work right.
  '(package-selected-packages
    (quote
-    (lua-mode highlight-current-line ein gitlab ponylang-mode pycoverage wolfram circe gist yaml-mode smart-compile rudel folding origami git-gutter-fringe+ google-translate cmake-project coverlay irony-eldoc multitran fill-column-indicator rtags auto-complete-clang disaster haskell-mode autopair nim-mode irony cmake-mode git-gutter dash auctex undo-tree elpy)))
+    (smartparens lua-mode highlight-current-line ein gitlab ponylang-mode pycoverage wolfram circe gist yaml-mode smart-compile rudel folding origami git-gutter-fringe+ google-translate cmake-project coverlay irony-eldoc multitran fill-column-indicator rtags auto-complete-clang disaster haskell-mode autopair nim-mode irony cmake-mode git-gutter dash auctex undo-tree elpy)))
  '(send-mail-function (quote smtpmail-send-it)))
 (custom-set-faces
  ;; custom-set-faces was added by Custom.
