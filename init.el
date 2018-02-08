@@ -581,6 +581,14 @@ CSTR can contain special escape sequences:
 
 (add-hook 'git-status-mode-hook 'lg-git-status-install-keys)
 
+;; Make vc-push/vc-update work in git-status buffer
+(defun lg-git-status-vc-deduce-fileset (orig-fun &rest args)
+  (if (eq major-mode 'git-status-mode)
+      `(Git (,default-directory))
+    (apply orig-fun args)))
+
+(advice-add 'vc-deduce-fileset :around #'lg-git-status-vc-deduce-fileset)
+
 ;; Paste to gist
 (defun lg-gist-region (begin end &optional arg)
   "Paste region to gist.
@@ -979,7 +987,7 @@ If prefix ARG is specified, then replace region with the evaluation result."
 (define-key py-shell-map (kbd "M-C-l") 'switch-to-other-buffer)
 
 ;;; Cython mode
-;(require 'cython-mode)
+(require 'cython-mode)
 
 ;; For scons
 (add-to-list 'auto-mode-alist '("SConstruct" . python-mode))
@@ -1370,6 +1378,7 @@ auto-insert-alist)
                                 "&format=ftp")])
 
         ("MultiTran" . [simple-query "multitran.ru" "http://www.multitran.ru/c/m.exe?l1=2&l2=1&s=" ""])
+        ("man" . [simple-query "linux.die.net" "https://linux.die.net/man/" ""])
         ))
 
 (define-key global-map (kbd "C-c w j") 'webjump)
@@ -1837,7 +1846,7 @@ I hate this color, so i wont forget to finish macro wheen needed.")
  ;; If there is more than one, they won't work right.
  '(package-selected-packages
    (quote
-    (smartparens lua-mode highlight-current-line ein gitlab ponylang-mode pycoverage wolfram circe gist yaml-mode smart-compile rudel folding origami git-gutter-fringe+ google-translate cmake-project coverlay irony-eldoc multitran fill-column-indicator rtags auto-complete-clang disaster haskell-mode autopair nim-mode irony cmake-mode git-gutter dash auctex undo-tree elpy)))
+    (rust-mode cython-mode gh smartparens lua-mode highlight-current-line ein gitlab ponylang-mode pycoverage wolfram circe gist yaml-mode smart-compile rudel folding origami git-gutter-fringe+ google-translate cmake-project coverlay irony-eldoc multitran fill-column-indicator rtags auto-complete-clang disaster haskell-mode autopair nim-mode irony cmake-mode git-gutter dash auctex undo-tree elpy)))
  '(send-mail-function (quote smtpmail-send-it)))
 (custom-set-faces
  ;; custom-set-faces was added by Custom.
