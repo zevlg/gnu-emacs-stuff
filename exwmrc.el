@@ -209,6 +209,18 @@
 (exwm-input-set-key (kbd "H-c d") 'multitran)
 
 ;;;
+(defun lg--exwm-kbd-quit ()
+  "Make focus follow mouse."
+  (interactive)
+  (xcb:+request exwm--connection
+      (make-instance 'xcb:SetInputFocus
+                     :revert-to xcb:InputFocus:PointerRoot
+                     :focus xcb:InputFocus:PointerRoot
+                     :time xcb:Time:CurrentTime))
+  (xcb:flush exwm--connection))
+
+
+(exwm-input-set-key (kbd "H-G") 'lg--exwm-kbd-quit)
 
 
 (defun lg-exwm-unmanage-all ()
