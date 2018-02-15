@@ -252,6 +252,33 @@ If ARG is non-nil delete region, otherwise kill."
 (setq google-translate-default-source-language "en"
       google-translate-default-target-language "ru")
 
+(defvar lg-google-translate-history nil "History for `read-string'.")
+
+(defun lg-google-translate (text &optional override-p)
+  "Translate TEXT using google translate.
+Use `C-u' prefix to select languages."
+  (interactive
+   (let ((default-value (if (current-word)
+                            (list (current-word))
+                          lg-google-translate-history)))
+     (list (if (use-region-p)
+               (prog1
+                   (buffer-substring-no-properties (region-beginning) (region-end))
+                 (deactivate-mark))
+             (read-string
+              (cond (default-value
+                      (format "Translate text [%s]: " (car default-value)))
+                    (t "Translate text: "))
+              nil 'lg-google-translate-history default-value))
+           current-prefix-arg)))
+
+  (let ((langs (google-translate-read-args override-p nil)))
+    (google-translate-translate
+     (car langs) (cadr langs) text))
+
+  (pop-to-buffer "*Google Translate*")
+  (forward-button 1))
+
 ;;}}}
 
 ;;{{{ `-- Different bindings
@@ -906,7 +933,8 @@ If prefix ARG is specified, then replace region with the evaluation result."
 ;; C-cd Prefix for DICT
 (define-key global-map (kbd "C-c d d") 'multitran)
 (define-key global-map (kbd "C-c d r") 'multitran)
-(define-key global-map (kbd "C-c d t") 'google-translate-at-point)
+(define-key global-map (kbd "C-c d t") 'lg-google-translate)
+(define-key global-map (kbd "C-c d w") 'wolfram-alpha)
 
 ;;}}}
 
