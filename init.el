@@ -124,6 +124,8 @@ bottom of the buffer stack."
 (global-set-key (kbd "C-/") 'undo-tree-undo)
 (global-set-key (kbd "C-x C-/") 'undo-tree-redo)
 
+(global-undo-tree-mode)
+
 ;;; Use cool `ibuffer' instead of ugly `list-buffers'
 (define-key global-map (kbd "C-x C-b") 'ibuffer)
 
@@ -249,6 +251,8 @@ If ARG is non-nil delete region, otherwise kill."
 
 ;;{{{ `-- Google translate
 
+(require 'google-translate)
+
 (setq google-translate-default-source-language "en"
       google-translate-default-target-language "ru")
 
@@ -277,6 +281,7 @@ Use `C-u' prefix to select languages."
      (car langs) (cadr langs) text))
 
   (pop-to-buffer "*Google Translate*")
+  (local-set-key (kbd "w") 'lg-google-translate)
   (forward-button 1))
 
 ;;}}}
@@ -883,6 +888,7 @@ If prefix ARG is specified, then replace region with the evaluation result."
 ;;{{{ `-- Editing commands
 
 (setq python-shell-interpreter "python3")
+(setq python-shell-buffer-name "Python3")
 
 (defun lg-py-shell ()
   "Switch to python interpreter."
@@ -1874,7 +1880,7 @@ I hate this color, so i wont forget to finish macro wheen needed.")
  ;; If there is more than one, they won't work right.
  '(package-selected-packages
    (quote
-    (rust-mode cython-mode gh smartparens lua-mode highlight-current-line ein gitlab ponylang-mode pycoverage wolfram circe gist yaml-mode smart-compile rudel folding origami git-gutter-fringe+ google-translate cmake-project coverlay irony-eldoc multitran fill-column-indicator rtags auto-complete-clang disaster haskell-mode autopair nim-mode irony cmake-mode git-gutter dash auctex undo-tree elpy)))
+    (nhexl-mode rust-mode cython-mode gh smartparens lua-mode highlight-current-line ein gitlab ponylang-mode pycoverage wolfram circe gist yaml-mode smart-compile rudel folding origami git-gutter-fringe+ google-translate cmake-project coverlay irony-eldoc multitran fill-column-indicator rtags auto-complete-clang disaster haskell-mode autopair nim-mode irony cmake-mode git-gutter dash auctex undo-tree elpy)))
  '(send-mail-function (quote smtpmail-send-it)))
 (custom-set-faces
  ;; custom-set-faces was added by Custom.
