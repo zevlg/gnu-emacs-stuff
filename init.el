@@ -1739,6 +1739,28 @@ auto-insert-alist)
       fci-rule-width 2)
 (setq fci-rule-color "gray75")
 
+;;; Scad-mode
+
+(setq scad-preview-window-position 'below)
+(setq scad-preview-window-size 10)
+(setq scad-preview-image-size '(900 . 450))
+(setq scad-preview-colorscheme "Starnight")
+
+(defun lg-scad-compile ()
+  "Compile scad file to stl."
+  (interactive)
+  (let ((out-prefix (if (file-exists-p "stl/") "stl/" "")))
+    (compile
+     (concat scad-command "-o " out-prefix
+             (file-name-base buffer-file-name) ".stl"
+             " " buffer-file-name))))
+
+(defun lg-scad-mode-init ()
+  (local-set-key (kbd "C-c c c") 'lg-scad-compile)
+  (scad-preview--start))
+
+(add-hook 'scad-mode-hook 'lg-scad-mode-init)
+
 ;;{{{ `-- Desktop
 
 (require 'desktop)
@@ -1880,7 +1902,7 @@ I hate this color, so i wont forget to finish macro wheen needed.")
  ;; If there is more than one, they won't work right.
  '(package-selected-packages
    (quote
-    (nhexl-mode rust-mode cython-mode gh smartparens lua-mode highlight-current-line ein gitlab ponylang-mode pycoverage wolfram circe gist yaml-mode smart-compile rudel folding origami git-gutter-fringe+ google-translate cmake-project coverlay irony-eldoc multitran fill-column-indicator rtags auto-complete-clang disaster haskell-mode autopair nim-mode irony cmake-mode git-gutter dash auctex undo-tree elpy)))
+    (scad-mode scad-preview nhexl-mode rust-mode cython-mode gh smartparens lua-mode highlight-current-line ein gitlab ponylang-mode pycoverage wolfram circe gist yaml-mode smart-compile rudel folding origami git-gutter-fringe+ google-translate cmake-project coverlay irony-eldoc multitran fill-column-indicator rtags auto-complete-clang disaster haskell-mode autopair nim-mode irony cmake-mode git-gutter dash auctex undo-tree elpy)))
  '(send-mail-function (quote smtpmail-send-it)))
 (custom-set-faces
  ;; custom-set-faces was added by Custom.
