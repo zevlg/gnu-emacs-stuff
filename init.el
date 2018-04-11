@@ -7,7 +7,7 @@
 ;;   M-x package-install-selected-packages RET
 ;; after loading init.el fo the first time
 ;;
-(set-frame-height nil 30)
+(set-frame-height nil 28)
 (require 'package)
 ;; (add-to-list 'package-archives
 ;;              '("elpy" . "https://jorgenschaefer.github.io/packages/"))
@@ -101,6 +101,7 @@ bottom of the buffer stack."
      (nth (1+ arg) (buffer-list)))))
 
 (define-key global-map (kbd "C-M-l") 'switch-to-other-buffer)
+(define-key global-map (kbd "C-x C-l") 'switch-to-other-buffer)
 (require 'comint)
 (define-key comint-mode-map (kbd "C-M-l") 'switch-to-other-buffer)
 
@@ -544,8 +545,11 @@ CSTR can contain special escape sequences:
 (server-start)
 
 ;; Bold-ify/red-ify "Server"
-(let ((sspec (assq 'server-buffer-clients minor-mode-alist)))
-  (setcdr sspec (list (propertize " Server" 'face 'error))))
+(let ((sspec (assq 'server-buffer-clients minor-mode-alist))
+      (server-string (propertize " Server" 'face 'error)))
+  (if sspec
+      (setcdr sspec (list server-string))
+    (push '(server-buffer-clients server-string) minor-mode-alist)))
 
 ;;}}}
 
@@ -1902,7 +1906,7 @@ I hate this color, so i wont forget to finish macro wheen needed.")
  ;; If there is more than one, they won't work right.
  '(package-selected-packages
    (quote
-    (scad-mode scad-preview nhexl-mode rust-mode cython-mode gh smartparens lua-mode highlight-current-line ein gitlab ponylang-mode pycoverage wolfram circe gist yaml-mode smart-compile rudel folding origami git-gutter-fringe+ google-translate cmake-project coverlay irony-eldoc multitran fill-column-indicator rtags auto-complete-clang disaster haskell-mode autopair nim-mode irony cmake-mode git-gutter dash auctex undo-tree elpy)))
+    (gitter scad-mode scad-preview nhexl-mode rust-mode cython-mode gh smartparens lua-mode highlight-current-line ein gitlab ponylang-mode pycoverage wolfram circe gist yaml-mode smart-compile rudel folding origami git-gutter-fringe+ google-translate cmake-project coverlay irony-eldoc multitran fill-column-indicator rtags auto-complete-clang disaster haskell-mode autopair nim-mode irony cmake-mode git-gutter dash auctex undo-tree elpy)))
  '(send-mail-function (quote smtpmail-send-it)))
 (custom-set-faces
  ;; custom-set-faces was added by Custom.
