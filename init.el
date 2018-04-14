@@ -88,6 +88,7 @@
       '(" *Message-Log*" "*Messages*" "*Buffer List*" "*Ibuffer*"))
 
 (define-key global-map (kbd "C-<tab>") 'other-window)
+(define-key global-map (kbd "C-x C-o") 'other-window)
 
 (defun switch-to-other-buffer (arg)
   "Switch to the previous buffer.  With a numeric arg, n, switch to the nth
@@ -123,7 +124,9 @@ bottom of the buffer stack."
 (autoload 'undo-tree-redo "undo-tree" "Redo from redo package." t)
 
 (global-set-key (kbd "C-/") 'undo-tree-undo)
+(global-set-key (kbd "C-_") 'undo-tree-undo)
 (global-set-key (kbd "C-x C-/") 'undo-tree-redo)
+(global-set-key (kbd "C-x C-_") 'undo-tree-redo)
 
 (global-undo-tree-mode)
 
@@ -907,6 +910,7 @@ If prefix ARG is specified, then replace region with the evaluation result."
 ;; C-ce Editing prefix
 (define-key global-map (kbd "C-c e c") 'checkdoc)
 (define-key global-map (kbd "C-c e w") 'whitespace-cleanup)
+(define-key global-map (kbd "C-c e o") 'delete-blank-lines)
 (define-key global-map (kbd "C-c e a") 'align)
 ;;(define-key global-map (kbd "C-c e l") 'lg-fix-long-lines)
 ;;(define-key global-map (kbd "C-c e i") 'lg-ispell-region-or-buffer)
