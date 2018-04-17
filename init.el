@@ -961,7 +961,7 @@ If prefix ARG is specified, then replace region with the evaluation result."
 (define-key global-map (kbd "C-c l f") 'list-faces-display)
 (define-key global-map (kbd "C-c l i") 'list-itimers)
 (define-key global-map (kbd "C-c l m") 'list-matching-lines)
-(define-key global-map (kbd "C-c l t") 'list-text-properties-at)
+(define-key global-map (kbd "C-c l t") 'describe-text-properties)
 (define-key global-map (kbd "C-c l p") 'list-processes)
 (define-key global-map (kbd "C-c l s") 'list-strokes)
 (define-key global-map (kbd "C-c l .") 'list-tags)
