@@ -297,7 +297,7 @@ Use `C-u' prefix to select languages."
 (define-key global-map (kbd "C-z") 'nil)
 
 (define-key global-map (kbd "C-=") 'what-cursor-position)
-(define-key global-map (kbd "C-x M-=") 'count-words)
+(define-key global-map (kbd "M-=") 'count-words)
 
 ;;}}}
 
@@ -463,6 +463,17 @@ With prefix ARG run `just-one-space'."
 (define-key global-map (kbd "M-\\") 'lg-fixup-whitespace)
 (define-key global-map (kbd "C-c <space>") 'lg-fixup-whitespace)
 
+;; Do M-x lg-try-luck RET before serious work
+(defun lg-try-luck (&optional luck-arg)
+  "Try your luck.
+Prefix arg LUCK-ARG specifies luck parameter, default is 4."
+  (interactive (list (prefix-numeric-value (or prefix-arg 4))))
+  (if (= (truncate (* luck-arg (/ (random most-positive-fixnum)
+                                  (float most-positive-fixnum))))
+         (1- luck-arg))
+      (progn (message "No luck for today :(") nil)
+    (progn (message "You are lucky!") t)))
+
 ;;}}}
 
 ;;{{{ `-- Mini calculator
@@ -505,6 +516,7 @@ CSTR can contain special escape sequences:
     (message "Register %c set to: %s" r (get-register r))))
 
 ;;}}}
+
 ;;{{{ `-- Scrolling
 
 (setq scroll-step 1)
@@ -939,7 +951,7 @@ If prefix ARG is specified, then replace region with the evaluation result."
 (define-key global-map (kbd "C-c m i") 'flyspell-mode)
 (define-key global-map (kbd "C-c m m") 'himarks-mode)
 (define-key global-map (kbd "C-c m s") 'stripes-mode)
-(define-key global-map (kbd "C-c m l") 'lg-column-ruler)
+(define-key global-map (kbd "C-c m l") 'ruler-mode)
 (define-key global-map (kbd "C-c m d") 'dot-mode)
 (define-key global-map (kbd "C-c m r") 'rst-mode)
 (define-key global-map (kbd "C-c m <RET>") 'hide-cr-mode)
@@ -1911,7 +1923,7 @@ I hate this color, so i wont forget to finish macro wheen needed.")
  ;; If there is more than one, they won't work right.
  '(package-selected-packages
    (quote
-    (gitter scad-mode scad-preview nhexl-mode rust-mode cython-mode gh smartparens lua-mode highlight-current-line ein gitlab ponylang-mode pycoverage wolfram circe gist yaml-mode smart-compile rudel folding origami git-gutter-fringe+ google-translate cmake-project coverlay irony-eldoc multitran fill-column-indicator rtags auto-complete-clang disaster haskell-mode autopair nim-mode irony cmake-mode git-gutter dash auctex undo-tree elpy)))
+    (wanderlust markdown-mode gitter scad-mode scad-preview nhexl-mode rust-mode cython-mode gh smartparens lua-mode highlight-current-line ein gitlab ponylang-mode pycoverage wolfram circe gist yaml-mode smart-compile rudel folding origami git-gutter-fringe+ google-translate cmake-project coverlay irony-eldoc multitran fill-column-indicator rtags auto-complete-clang disaster haskell-mode autopair nim-mode irony cmake-mode git-gutter dash auctex undo-tree elpy)))
  '(send-mail-function (quote smtpmail-send-it)))
 (custom-set-faces
  ;; custom-set-faces was added by Custom.
