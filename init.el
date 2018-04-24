@@ -1796,7 +1796,6 @@ auto-insert-alist)
 (setq desktop-buffers-not-to-save
       "\\(^nn\\.a[0-9]+\\|\\.log\\|(ftp)\\|^tags\\|^TAGS\\|^worklog\\)$")
 
-(desktop-save-mode 1)
 (setq desktop-globals-to-save
       '(desktop-missing-file-warning
         kill-ring-yank-pointer
@@ -1831,9 +1830,13 @@ auto-insert-alist)
   "Alist of desktop files.")
 
 (defun lg-desktop-load (&optional name)
+  "Load previously saved desktop by NAME."
   (interactive (list (completing-read
                       "Desktop [default]: "
                       (mapcar #'(lambda (el) (list (car el))) lg-desktops))))
+  ;; enable saving desktops if one is loaded
+  (desktop-save-mode 1)
+
   (when (or (null name) (string= name ""))
     (setq name "default"))
   (let* ((desktop-base-file-name (cdr (assoc name lg-desktops)))
@@ -1844,16 +1847,20 @@ auto-insert-alist)
     (message (format "%s desktop loaded" name))))
 
 (defun lg-desktop-save (&optional name)
+  "Save the desktop to NAME.
+Save only if previously it was loaded or called interactively."
   (interactive (list (completing-read
                       (format "Desktop [%s]: " lg-desktop-last)
                       (mapcar #'(lambda (el) (list (car el))) lg-desktops))))
-  (when (or (null name) (string= name ""))
-    (setq name lg-desktop-last))
 
-  (let* ((desktop-base-file-name (cdr (assoc name lg-desktops)))
-         (desktop-base-lock-name (concat desktop-base-file-name ".lock")))
-    (desktop-save user-emacs-directory t)
-    (setq lg-desktop-last name)))
+  (when (or desktop-save-mode (called-interactively-p 'any))
+    (when (or (null name) (string= name ""))
+      (setq name lg-desktop-last))
+
+    (let* ((desktop-base-file-name (cdr (assoc name lg-desktops)))
+           (desktop-base-lock-name (concat desktop-base-file-name ".lock")))
+      (desktop-save user-emacs-directory t)
+      (setq lg-desktop-last name))))
 
 (defun lg-desktop-setup ()
   (mapc #'(lambda (v)
@@ -1918,8 +1925,9 @@ I hate this color, so i wont forget to finish macro wheen needed.")
 (let ((exwm-debug-on t))
   (load-library "exwmrc"))
 
-;; Enable EXWM
-(exwm-enable)
+;; Enable EXWM for non-tty emacs
+(when window-system
+  (exwm-enable))
 
 ;; Load last desktop
 ;(lg-desktop-load)
@@ -1933,7 +1941,7 @@ I hate this color, so i wont forget to finish macro wheen needed.")
  ;; If there is more than one, they won't work right.
  '(package-selected-packages
    (quote
-    (wanderlust markdown-mode gitter scad-mode scad-preview nhexl-mode rust-mode cython-mode gh smartparens lua-mode highlight-current-line ein gitlab ponylang-mode pycoverage wolfram circe gist yaml-mode smart-compile rudel folding origami git-gutter-fringe+ google-translate cmake-project coverlay irony-eldoc multitran fill-column-indicator rtags auto-complete-clang disaster haskell-mode autopair nim-mode irony cmake-mode git-gutter dash auctex undo-tree elpy)))
+    (travis wanderlust markdown-mode gitter scad-mode scad-preview nhexl-mode rust-mode cython-mode gh smartparens lua-mode highlight-current-line ein gitlab ponylang-mode pycoverage wolfram circe gist yaml-mode smart-compile rudel folding origami git-gutter-fringe+ google-translate cmake-project coverlay irony-eldoc multitran fill-column-indicator rtags auto-complete-clang disaster haskell-mode autopair nim-mode irony cmake-mode git-gutter dash auctex undo-tree elpy)))
  '(send-mail-function (quote smtpmail-send-it)))
 (custom-set-faces
  ;; custom-set-faces was added by Custom.
