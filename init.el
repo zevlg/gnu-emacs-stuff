@@ -88,6 +88,7 @@
       '(" *Message-Log*" "*Messages*" "*Buffer List*" "*Ibuffer*"))
 
 (define-key global-map (kbd "C-<tab>") 'other-window)
+(define-key global-map (kbd "C-x TAB") (kbd "C-u - 1 TAB"))
 (define-key global-map (kbd "C-x C-o") 'other-window)
 
 (defun switch-to-other-buffer (arg)
@@ -972,7 +973,7 @@ If prefix ARG is specified, then replace region with the evaluation result."
 (define-key global-map (kbd "C-c l h") 'list-command-history)
 (define-key global-map (kbd "C-c l c") 'list-colors-display)
 (define-key global-map (kbd "C-c l f") 'list-faces-display)
-(define-key global-map (kbd "C-c l i") 'list-itimers)
+(define-key global-map (kbd "C-c l i") 'timer-list)
 (define-key global-map (kbd "C-c l m") 'list-matching-lines)
 (define-key global-map (kbd "C-c l t") 'describe-text-properties)
 (define-key global-map (kbd "C-c l p") 'list-processes)
@@ -1866,6 +1867,15 @@ auto-insert-alist)
 
 ;;}}}
 
+;;{{{ `-- Telega (telegram client)
+
+(autoload 'telega "telega" "Telegram client" t)
+(setq telega-eliding-string (make-string 3 #x00b7))
+
+(define-key global-map (kbd "C-c t") 'telega)
+
+;;}}}
+
 ;;{{{ `-- Editing tools
 
 ;;; Colorize modeline when defining macro
@@ -1912,8 +1922,8 @@ I hate this color, so i wont forget to finish macro wheen needed.")
 (exwm-enable)
 
 ;; Load last desktop
-(lg-desktop-load)
-(message (format "+ %s loaded" user-init-file))
+;(lg-desktop-load)
+(message (format "+ %s loaded, M-x lg-desktop-load RET to load desktop" user-init-file))
 
 ;;;;
 (custom-set-variables
@@ -1931,3 +1941,4 @@ I hate this color, so i wont forget to finish macro wheen needed.")
  ;; Your init file should contain only one such instance.
  ;; If there is more than one, they won't work right.
  )
+(put 'timer-list 'disabled nil)
