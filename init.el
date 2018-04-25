@@ -1772,7 +1772,9 @@ auto-insert-alist)
   (diff-hunk-kill))
 
 (defun lg-diff-install-keys ()
-  (local-set-key (kbd "C-/") 'lg-diff-revert-hunk))
+  (local-set-key (kbd "C-/") 'lg-diff-revert-hunk)
+  (local-set-key (kbd "C-_") 'lg-diff-revert-hunk)
+  )
 
 (add-hook 'diff-mode-hook 'lg-diff-install-keys)
 
@@ -1981,7 +1983,7 @@ Or run `call-last-kbd-macro' otherwise."
  ;; If there is more than one, they won't work right.
  '(package-selected-packages
    (quote
-    (travis wanderlust markdown-mode gitter scad-mode scad-preview nhexl-mode rust-mode cython-mode gh smartparens lua-mode highlight-current-line ein gitlab ponylang-mode pycoverage wolfram circe gist yaml-mode smart-compile rudel folding origami git-gutter-fringe+ google-translate cmake-project coverlay irony-eldoc multitran fill-column-indicator rtags auto-complete-clang disaster haskell-mode autopair nim-mode irony cmake-mode git-gutter dash auctex undo-tree elpy)))
+    (all-the-icons travis wanderlust markdown-mode gitter scad-mode scad-preview nhexl-mode rust-mode cython-mode gh smartparens lua-mode highlight-current-line ein gitlab ponylang-mode pycoverage wolfram circe gist yaml-mode smart-compile rudel folding origami git-gutter-fringe+ google-translate cmake-project coverlay irony-eldoc multitran fill-column-indicator rtags auto-complete-clang disaster haskell-mode autopair nim-mode irony cmake-mode git-gutter dash auctex undo-tree elpy)))
  '(send-mail-function (quote smtpmail-send-it)))
 (custom-set-faces
  ;; custom-set-faces was added by Custom.
