@@ -44,8 +44,6 @@
 (setq enable-recursive-minibuffers t)
 (setq select-enable-primary t)
 
-(setq kill-ring-max 200)
-
 ;;; Browse kill ring
 ;; git clone https://github.com/browse-kill-ring/browse-kill-ring.git
 ;; Installs `M-y' binding to run `browse-kill-ring' command.
@@ -141,6 +139,10 @@ bottom of the buffer stack."
   (interactive)
   (mouse-yank-at-click nil nil))
 
+(defadvice save-buffers-kill-emacs (before lg-save-scratch-file activate)
+  "Save scratch before exiting."
+  (lg-save-lsf-buffer))
+
 ;;; Paren mode
 (defun lg-show-paren-surround ()
   (let ((pdflt (show-paren--default)))
@@ -174,8 +176,7 @@ bottom of the buffer stack."
 
 ;; Kill \n also if killing from the begining of line
 (setq kill-whole-line t)
-;; remember everything you kill
-(setq kill-ring-max 1000)
+(setq kill-ring-max 50)
 
 ;; NOTE: With negative prefix arg `kill-line' will kill lines backward!
 (defun lg-kill-line (&optional arg)
@@ -890,13 +891,24 @@ If prefix ARG is specified, then replace region with the evaluation result."
         (delete-region start end)
         (insert res)))))
 
+(defun lg-macroexpand-sexp ()
+  "Expand emacs lisp macro at point."
+  (interactive)
+  (save-excursion
+    (let ((sexp (read (current-buffer))))
+      (unless (listp sexp)
+        (backward-up-list)
+        (setq sexp (read (current-buffer))))
+      (pp-macroexpand-expression sexp))))
+  
 ;; NOTE: Installs C-ce Prefix for elisp operations (for lisp-mode only)
 (define-key emacs-lisp-mode-map (kbd "C-c e b") 'lg-emacs-eval-buffer)
 (define-key emacs-lisp-mode-map (kbd "C-c e r") 'lg-emacs-eval-region)
 (define-key emacs-lisp-mode-map (kbd "C-c e f") 'eval-defun)
 (define-key emacs-lisp-mode-map (kbd "C-c e s") 'eval-last-sexp)
 ;; NOTE: There is also `emacs-lisp-macroexpand'
-(define-key emacs-lisp-mode-map (kbd "C-c e e") 'pp-macroexpand-last-sexp)
+(define-key emacs-lisp-mode-map (kbd "C-c e e") 'lg-macroexpand-sexp)
+(define-key emacs-lisp-mode-map (kbd "C-c e m") 'lg-macroexpand-sexp)
 
 (define-key lisp-interaction-mode-map (kbd "C-c e b") 'lg-emacs-eval-buffer)
 (define-key lisp-interaction-mode-map (kbd "C-c e r") 'lg-emacs-eval-region)
@@ -1611,7 +1623,7 @@ auto-insert-alist)
   ;  (c-toggle-electric-state t)
 
   ;; Nice rtag based eldoc
-  (lg-ensure-rdm-is-running)
+;  (lg-ensure-rdm-is-running)
   (setq eldoc-documentation-function 'rtags-eldoc)
 
   (local-set-key (kbd "M-.") 'rtags-find-symbol)
@@ -1906,6 +1918,22 @@ I hate this color, so i wont forget to finish macro wheen needed.")
 (defadvice kmacro-end-macro (before lg-decolorize-minibuffer activate)
   "Macro defined, stop colorizing minibuffer."
   (lg-colorize-minibuffer lg-minibuffer-color-saved))
+
+  (if defining-kbd-macro
+      (kmacro-end-macro nil))
+
+(defun lg-end-and-call-macro (arg)
+  "Run `apply-macro-to-region-lines' if region is active.
+Or run `call-last-kbd-macro' otherwise."
+  (interactive "P")
+  (if defining-kbd-macro
+      (kmacro-end-macro nil))
+
+  (if (region-active-p)
+      (call-interactively #'apply-macro-to-region-lines)
+    (call-interactively #'kmacro-call-macro)))
+
+(define-key global-map (kbd "C-x e") 'lg-end-and-call-macro)
 
 ;;}}}
 
