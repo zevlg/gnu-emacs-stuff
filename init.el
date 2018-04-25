@@ -340,6 +340,18 @@ Otherwise toggle."
                  (> (prefix-numeric-value arg) 0))))
   (message "Debug on error is %s" (if debug-on-error "ON" "OFF")))
 
+(defun debug-on-quit (arg)
+  "Toggle debug on quit.
+With negative ARG turn it off, with positive turn it on.
+Otherwise toggle."
+  (interactive "P")
+  (setq debug-on-quit
+        (or (and (null arg)
+                 (not debug-on-quit))
+            (and (not (null arg))
+                 (> (prefix-numeric-value arg) 0))))
+  (message "Debug on quit is %s" (if debug-on-quit "ON" "OFF")))
+
 (defvar lg-scratch-file (expand-file-name "~/.emacs.d/*scratch-file*"))
 
 (defun lg-switch-to-scratch (arg)
