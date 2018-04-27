@@ -863,6 +863,12 @@ M-{ causes next skeleton insertation.
 
 ;;{{{ `-- Emacs lisp mode
 
+(defun lg-emacs-lisp-mode-customize ()
+  (local-set-key (kbd "C-c c c") 'byte-compile-file)
+  )
+
+(add-hook 'emacs-lisp-mode-hook 'lg-emacs-lisp-mode-customize)
+
 ;; Evaluate current-buffer
 (defun lg-emacs-eval-buffer (buffer)
   "Evaluate BUFFER."
@@ -1932,6 +1938,7 @@ Save only if previously it was loaded or called interactively."
 
 (autoload 'telega "telega" "Telegram client" t)
 (setq telega-eliding-string (make-string 3 #x00b7))
+(setq telega-filter-custom-expand t)
 
 (define-key global-map (kbd "C-c t") 'telega)
 
