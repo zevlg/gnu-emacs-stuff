@@ -373,6 +373,7 @@ If prefix ARG is specified, switch in other window."
 ;(add-hook 'term-setup-hook (lambda () (kill-buffer "*scratch*")))
 (with-current-buffer
     (setq lsf-buffer (find-file-noselect lg-scratch-file))
+  (font-lock-mode -1)
   (kill-buffer "*scratch*")
   (rename-buffer "*scratch*"))
 
@@ -502,14 +503,12 @@ Prefix arg LUCK-ARG specifies luck parameter, default is 4."
   "Calculate expression EXPR.
 If ARG is given, then insert the result to current-buffer"
   (interactive
-   (list (read-from-minibuffer "Enter expression: ")
+   (list (read-from-minibuffer "Calc expression: ")
          current-prefix-arg))
-
   (let ((result (calc-eval expr)))
     (if arg
         (insert result)
       (message "Result: [%s] = %s" expr result))))
-(global-set-key (kbd "M-#") 'lg-mini-calc)
 
 (defun lg-calc-register (r cstr)
   "Recalculate value for register R.
@@ -804,19 +803,10 @@ M-{ causes next skeleton insertation.
 
 ;;{{{ `-- Highlight current line
 
-(defvar highlight-current-line-minor-mode nil)
-(autoload 'highlight-current-line-minor-mode "highlight-current-line")
-
-(defface highlight-current-line-face
-  '((t (:background "greenyellow")))
-    "Face used to highlight current line."
-  :group 'highlight-current-line)
-
 (defun highline-local-on ()
   "Ensure current line is highligted."
   (interactive)
-  (unless highlight-current-line-minor-mode
-    (highlight-current-line-minor-mode)))
+  (hl-line-mode 1))
 
 ;;; Use highline in several major modes by default
 (add-hook 'ibuffer-hooks 'highline-local-on)
@@ -935,6 +925,13 @@ If prefix ARG is specified, then replace region with the evaluation result."
 (setq python-shell-interpreter "python3")
 (setq python-shell-buffer-name "Python3")
 
+;; shutup "Shell native completion is enabled."
+(remove-hook 'python-shell-first-prompt-hook
+             #'python-shell-completion-native-turn-on-maybe-with-msg)
+(add-hook 'python-shell-first-prompt-hook
+          #'python-shell-completion-native-turn-on-maybe)
+
+
 (defun lg-py-shell ()
   "Switch to python interpreter."
   (interactive)
@@ -944,6 +941,35 @@ If prefix ARG is specified, then replace region with the evaluation result."
    (process-buffer (python-shell-get-process-or-error))))
 
 (define-key global-map (kbd "C-c d p") 'lg-py-shell)
+
+;;; Python based mini calculator
+(defun lg-python-mini-calc (pyexpr &optional arg)
+  "Evaluate python expression.
+If prefix ARG is given then insert result into the current buffer."
+  (interactive
+   (list (read-from-minibuffer "Python calc: ")
+         current-prefix-arg))
+  (unless (python-shell-get-process)
+    (run-python)
+    (accept-process-output (python-shell-get-process-or-error) 0.5))
+
+  (let ((proc (python-shell-get-process-or-error)) res)
+    (with-current-buffer (process-buffer proc)
+      (save-excursion
+        (goto-char (point-max))
+        (insert pyexpr "  # from `lg-python-mini-calc'")
+        (comint-send-input)
+        (accept-process-output proc 1)
+
+        (goto-char (process-mark proc))
+        (forward-line 0)
+        (setq res (substring (buffer-substring-no-properties
+                              comint-last-input-end (point))
+                             0 -1))))
+    (if arg
+        (insert res)
+      (message "Result: [%s] = %s" pyexpr res))))
+(global-set-key (kbd "M-#") 'lg-python-mini-calc)
 
 ;; C-ce Editing prefix
 (define-key global-map (kbd "C-c e c") 'checkdoc)
@@ -963,14 +989,13 @@ If prefix ARG is specified, then replace region with the evaluation result."
 (define-key global-map (kbd "C-c r o") 'occur)
 
 ;; C-cm Prefix for MISC commands
-(define-key global-map (kbd "C-c m c") 'lg-mini-calc)
 (define-key global-map (kbd "C-c m f") 'folding-mode)
 (define-key global-map (kbd "C-c m a") 'ascii-display)
 (define-key global-map (kbd "C-c m g") 'imenu)
 (define-key global-map (kbd "C-c m o") 'occur)
 (define-key global-map (kbd "C-c m |") 'vertical-mode)
 (define-key global-map (kbd "C-c m v") 'fci-mode)
-(define-key global-map (kbd "C-c m h") 'highlight-current-line-minor-mode)
+(define-key global-map (kbd "C-c m h") 'hl-line-mode)
 (define-key global-map (kbd "C-c m w") 'whitespace-mode)
 (define-key global-map (kbd "C-c m F") 'flyspell-mode)
 (define-key global-map (kbd "C-c m i") 'flyspell-mode)
@@ -978,7 +1003,7 @@ If prefix ARG is specified, then replace region with the evaluation result."
 (define-key global-map (kbd "C-c m s") 'stripes-mode)
 (define-key global-map (kbd "C-c m l") 'ruler-mode)
 (define-key global-map (kbd "C-c m d") 'dot-mode)
-(define-key global-map (kbd "C-c m r") 'rst-mode)
+(define-key global-map (kbd "C-c m r") 'ruler-mode)
 (define-key global-map (kbd "C-c m <RET>") 'hide-cr-mode)
 (define-key global-map (kbd "C-c m p") 'pabbrev-mode)
 
@@ -1462,6 +1487,9 @@ auto-insert-alist)
         ))
 
 (define-key global-map (kbd "C-c w j") 'webjump)
+
+;; Chromium browser by default
+(setq browse-url-browser-function 'browse-url-chromium)
 
 (defun lg-browse-url-at-point (&optional arg)
   (interactive "P")
@@ -1983,7 +2011,7 @@ Or run `call-last-kbd-macro' otherwise."
  ;; If there is more than one, they won't work right.
  '(package-selected-packages
    (quote
-    (all-the-icons travis wanderlust markdown-mode gitter scad-mode scad-preview nhexl-mode rust-mode cython-mode gh smartparens lua-mode highlight-current-line ein gitlab ponylang-mode pycoverage wolfram circe gist yaml-mode smart-compile rudel folding origami git-gutter-fringe+ google-translate cmake-project coverlay irony-eldoc multitran fill-column-indicator rtags auto-complete-clang disaster haskell-mode autopair nim-mode irony cmake-mode git-gutter dash auctex undo-tree elpy)))
+    (pabbrev stripe-buffer all-the-icons travis wanderlust markdown-mode gitter scad-mode scad-preview nhexl-mode rust-mode cython-mode gh smartparens lua-mode highlight-current-line ein gitlab ponylang-mode pycoverage wolfram circe gist yaml-mode smart-compile rudel folding origami git-gutter-fringe+ google-translate cmake-project coverlay irony-eldoc multitran fill-column-indicator rtags auto-complete-clang disaster haskell-mode autopair nim-mode irony cmake-mode git-gutter dash auctex undo-tree elpy)))
  '(send-mail-function (quote smtpmail-send-it)))
 (custom-set-faces
  ;; custom-set-faces was added by Custom.
