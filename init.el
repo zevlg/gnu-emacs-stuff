@@ -358,7 +358,7 @@ Otherwise toggle."
   "Switch to \\*scratch\\* buffer.
 If prefix ARG is specified, switch in other window."
   (interactive "P")
-  (let ((scbuf (find-file lg-scratch-file)))
+  (let ((scbuf (find-file-noselect lg-scratch-file)))
     (if arg
         (switch-to-buffer-other-window scbuf)
       (switch-to-buffer scbuf))))
