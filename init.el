@@ -2,6 +2,26 @@
 ;;
 ;; Copyright (C) 2015,2016 by Zajcev Evgeny
 ;;
+;;;;
+(custom-set-variables
+ ;; custom-set-variables was added by Custom.
+ ;; If you edit it by hand, you could mess it up, so be careful.
+ ;; Your init file should contain only one such instance.
+ ;; If there is more than one, they won't work right.
+ '(custom-safe-themes
+   '("fd236703d59b15f5fb5c8a109cdf102a7703da164231d199badcf05fe3467748" default))
+ '(package-selected-packages
+   '(flycheck flycheck-cython flycheck-pycheckers elpygen magit "company" company-emoji emojify sound-wav visual-fill-column pabbrev stripe-buffer all-the-icons travis wanderlust markdown-mode gitter scad-mode scad-preview nhexl-mode rust-mode cython-mode gh smartparens lua-mode highlight-current-line ein gitlab ponylang-mode pycoverage wolfram circe gist yaml-mode smart-compile rudel folding origami git-gutter-fringe+ google-translate cmake-project coverlay irony-eldoc multitran fill-column-indicator rtags auto-complete-clang disaster haskell-mode autopair nim-mode irony cmake-mode git-gutter dash auctex undo-tree elpy))
+ '(send-mail-function 'smtpmail-send-it))
+(custom-set-faces
+ ;; custom-set-faces was added by Custom.
+ ;; If you edit it by hand, you could mess it up, so be careful.
+ ;; Your init file should contain only one such instance.
+ ;; If there is more than one, they won't work right.
+ )
+(put 'timer-list 'disabled nil)
+
+
 ;; On new host do
 ;;   M-x package-refresh-contents RET
 ;;   M-x package-install-selected-packages RET
@@ -15,7 +35,8 @@
 (add-to-list 'package-archives
              '("melpa" . "https://melpa.org/packages/"))
 
-(package-initialize)
+;; Note: Not needed in emacs27
+;(package-initialize)
 
 (push "~/.emacs.d/lisp" load-path)
 (push "~/.emacs.d/thirdparty" load-path)
@@ -23,12 +44,97 @@
 (push "~/dev/gnu-emacs-stuff/thirdpart" load-path)
 (push "~/dev/emacs-stuff" load-path)
 (push "~/dev/emacs-stuff/thirdpart" load-path)
-(push "/usr/share/emacs24/site-lisp/git" load-path)
-(load-library "xemacs-theme-source-code")
+;; for git and git-blame
+(push "/usr/share/git-core/emacs" load-path)
+
+;; Theme
+(deftheme lg-xemacs-like "xemacs-like theme")
+
 (custom-theme-set-faces
- 'xemacs
- `(escape-glyph ((t (:weight bold :background "gold" :foreground "blue"
-                             :box (:line-width -1 :color "black"))))))
+ 'lg-xemacs-like
+
+ '(default ((t (:background "gray80" :foreground "black"))))
+ '(cursor ((t (:foregound "Red3"))))
+ '(border ((t (:foregound "black"))))
+
+ '(blue ((t (:foreground "blue"))))
+ '(bold ((t (:bold t))))
+ '(bold-italic ((t (:italic t :bold t))))
+ '(border-glyph ((t (nil))))
+ '(custom-button-face ((t (:bold t))))
+ '(custom-changed-face ((t (:background "blue" :foreground "white"))))
+ '(custom-documentation-face ((t (nil))))
+ '(custom-face-tag-face ((t (:underline t))))
+ '(custom-group-tag-face ((t (:underline t :foreground "blue"))))
+ '(custom-group-tag-face-1 ((t (:underline t :foreground "red"))))
+ '(custom-invalid-face ((t (:background "red" :foreground "yellow"))))
+ '(custom-modified-face ((t (:background "blue" :foreground "white"))))
+ '(custom-rogue-face ((t (:background "black" :foreground "pink"))))
+ '(custom-saved-face ((t (:underline t))))
+ '(custom-set-face ((t (:background "white" :foreground "blue"))))
+ '(custom-state-face ((t (:foreground "dark green"))))
+ '(custom-variable-button-face ((t (:underline t :bold t))))
+ '(custom-variable-tag-face ((t (:underline t :foreground "blue"))))
+ '(dired-face-boring ((t (:foreground "Gray65"))))
+ '(dired-face-directory ((t (:bold t))))
+ '(dired-face-executable ((t (:foreground "SeaGreen"))))
+ '(dired-face-flagged ((t (:background "LightSlateGray"))))
+ '(dired-face-marked ((t (:background "PaleVioletRed"))))
+ '(dired-face-permissions ((t (:background "grey75" :foreground "black"))))
+ '(dired-face-setuid ((t (:foreground "Red"))))
+ '(dired-face-socket ((t (:foreground "magenta"))))
+ '(dired-face-symlink ((t (:foreground "cyan"))))
+ '(font-lock-builtin-face ((t (:foreground "red3"))))
+ '(font-lock-comment-face ((t (:foreground "blue4"))))
+ '(font-lock-constant-face ((t (:foreground "red3"))))
+ '(font-lock-doc-string-face ((t (:foreground "green4"))))
+ '(font-lock-function-name-face ((t (:foreground "brown4"))))
+ '(font-lock-keyword-face ((t (:foreground "red4"))))
+ '(font-lock-preprocessor-face ((t (:foreground "blue3"))))
+ '(font-lock-reference-face ((t (:foreground "red3"))))
+ '(font-lock-string-face ((t (:foreground "green4"))))
+ '(font-lock-type-face ((t (:foreground "steelblue"))))
+ '(font-lock-variable-name-face ((t (:foreground "magenta4"))))
+ '(font-lock-warning-face ((t (:bold t :foreground "Red"))))
+ '(green ((t (:foreground "green"))))
+ '(gui-button-face ((t (:background "grey75" :foreground "black"))))
+ '(gui-element ((t (:background "Gray80"))))
+ '(highlight ((t (:background "darkseagreen2"))))
+ '(info-node ((t (:italic t :bold t))))
+ '(info-xref ((t (:bold t))))
+ '(isearch ((t (:background "paleturquoise"))))
+ '(italic ((t (:italic t))))
+ '(left-margin ((t (nil))))
+ '(list-mode-item-selected ((t (:background "gray68"))))
+ '(modeline ((t (:background "Gray80"))))
+ '(modeline-buffer-id ((t (:background "Gray80" :foreground "blue4"))))
+ '(modeline-mousable ((t (:background "Gray80" :foreground "firebrick"))))
+ '(modeline-mousable-minor-mode ((t (:background "Gray80" :foreground "green4"))))
+ '(paren-blink-off ((t (:foreground "gray80"))))
+ '(paren-match ((t (:background "darkseagreen2"))))
+ '(paren-mismatch ((t (:background "DeepPink" :foreground "black"))))
+ '(pointer ((t (nil))))
+ '(primary-selection ((t (:background "gray65"))))
+ '(red ((t (:foreground "red"))))
+ '(region ((t (:background "gray65"))))
+ '(right-margin ((t (nil))))
+ '(secondary-selection ((t (:background "paleturquoise"))))
+ '(text-cursor ((t (:background "Red3" :foreground "gray80"))))
+ '(toolbar ((t (:background "Gray80"))))
+ '(underline ((t (:underline t))))
+ '(vertical-divider ((t (:background "Gray80"))))
+ '(widget-button-face ((t (:bold t))))
+ '(widget-button-pressed-face ((t (:foreground "red"))))
+ '(widget-documentation-face ((t (:foreground "dark green"))))
+ '(widget-field-face ((t (:background "gray85"))))
+ '(widget-inactive-face ((t (:foreground "dim gray"))))
+ '(yellow ((t (:foreground "yellow"))))
+ '(zmacs-region ((t (:background "gray65"))))
+ '(escape-glyph ((t (:weight bold :background "gold" :foreground "blue"
+                             :box (:line-width -1 :color "black")))))
+ )
+
+(enable-theme 'lg-xemacs-like)
 
 ;;
 ;(set-face-font
@@ -39,6 +145,9 @@
 ;; See https://github.com/zevlg/RictyDiminishedL
 (set-face-attribute 'default nil :family "RictyDiminishedL")
 (set-face-attribute 'default nil :height 360)
+
+;; Dash is 2 columns width
+(set-char-table-range char-width-table '(?— . ?—) 2)
 
 (setq inhibit-splash-screen t)
 (setq enable-recursive-minibuffers t)
@@ -103,7 +212,8 @@ bottom of the buffer stack."
 (define-key global-map (kbd "C-M-l") 'switch-to-other-buffer)
 (define-key global-map (kbd "C-x C-l") 'switch-to-other-buffer)
 (require 'comint)
-(define-key comint-mode-map (kbd "C-M-l") 'switch-to-other-buffer)
+(define-key comint-mode-map (kbd "C-M-l") nil)
+(define-key comint-mode-map (kbd "C-c C-s") nil)
 
 ;;; Uso ido to switch buffers and open files
 (setq ido-max-window-height 1)
@@ -164,9 +274,10 @@ bottom of the buffer stack."
 (set-face-foreground 'show-paren-mismatch nil)
 
 (setq show-paren-delay 0)
-(setq show-paren-style 'expression)
+;(setq show-paren-style 'expression)
+(setq show-paren-style 'parenthesis)
 (setq show-paren-priority -1000)
-(show-paren-mode 1)
+;(show-paren-mode 1)
 
 ;;; Selected region
 ;(set-face-background 'default "gray80")
@@ -184,7 +295,7 @@ bottom of the buffer stack."
 If ARG is given `lg-kill-line' deletes to the beginning of line."
   (interactive "P")
   (if (and arg (listp arg))
-      (delete-region (point-at-bol) (point))
+      (kill-region (point-at-bol) (point))
     (kill-line arg)))
 
 (defun lg-kill-region (beg end &optional arg)
@@ -206,6 +317,19 @@ If ARG is non-nil delete region, otherwise kill."
   (let ((buffer (current-buffer)))
     (delete-window (selected-window))
     (kill-buffer buffer)))
+
+(defun lg-kill-buffer-in-other-window (arg)
+  "Kill buffer in other window.
+If prefix ARG is supplied, move point to other window."
+  (interactive "P")
+
+  (when (> (count-windows) 1)
+    (other-window 1)
+    (kill-buffer (current-buffer))
+
+    (unless arg
+      ;; Switch back
+      (other-window -1))))
 
 (define-key global-map (kbd "C-k") 'lg-kill-line)
 (define-key global-map (kbd "C-w") 'lg-kill-region)
@@ -364,7 +488,7 @@ If prefix ARG is specified, switch in other window."
       (switch-to-buffer scbuf))))
 
 (defun lg-install-switch-to-scratch ()
-  (local-set-key (kbd "C-c C-s") 'lg-switch-to-scratch))
+  (local-set-key (kbd "C-c C-s") nil))
 
 (setq initial-major-mode 'lisp-interaction-mode)
 (push '("\\*scratch-file\\*$" . lisp-interaction-mode) auto-mode-alist)
@@ -623,7 +747,8 @@ CSTR can contain special escape sequences:
                ;; by `grep-compute-defaults'.
                (grep-template nil)
                (grep-command nil)
-               (grep-host-defaults-alist nil))
+               (grep-host-defaults-alist nil)
+               (grep-use-null-filename-separator nil))
            ;; Recompute defaults using let-bound values above.
            (grep-compute-defaults)
            (setq template grep-template)))
@@ -1074,8 +1199,28 @@ If prefix ARG is given then insert result into the current buffer."
 (push "~/.emacs.d/python-mode" load-path)
 (require 'python-mode)
 
+;; make flymake marks more visible
+(define-fringe-bitmap 'flymake-double-exclamation-mark
+  (vector #b11111111
+          #b11111111
+          #b11111111
+          #b11111111
+          #b11111111
+          #b11111111
+          #b11111111
+          #b11111111
+          #b11111111
+          #b11111111
+          #b11111111
+          #b11111111
+          #b11111111
+          #b11111111
+          #b11111111
+          #b11111111
+          #b11111111))
+
 (setq elpy-modules '(elpy-module-sane-defaults
-                     elpy-module-company
+;                     elpy-module-company
                      elpy-module-eldoc
                      elpy-module-flymake
                      elpy-module-pyvenv))
@@ -1089,8 +1234,8 @@ If prefix ARG is given then insert result into the current buffer."
   (local-set-key (kbd "C-c C-c") 'py-comment-region)
   (local-set-key (kbd "C-j") 'lg-insert-nl-at-eol)
 
-  (local-set-key (kbd "C-c C-s") 'lg-switch-to-scratch)
-  (define-key elpy-mode-map (kbd "C-c C-s") 'lg-switch-to-scratch)
+  (local-set-key (kbd "C-c C-s") nil)
+  (define-key elpy-mode-map (kbd "C-c C-s") nil)
   )
 
 (add-hook 'python-mode-hook 'lg-py-install-keys)
@@ -1521,7 +1666,7 @@ auto-insert-alist)
 
 ;; Make sure rdm/rc/rp are in PATH
 (require 'subr-x)                       ; for `string-empty-p'
-(require 'rtags)
+;(require 'rtags)
 
 (autoload 'cmake-project--upward-find-last-file "cmake-project")
 
@@ -1670,17 +1815,19 @@ auto-insert-alist)
 
   ;; Nice rtag based eldoc
 ;  (lg-ensure-rdm-is-running)
-  (setq eldoc-documentation-function 'rtags-eldoc)
+;  (setq eldoc-documentation-function 'rtags-eldoc)
 
   (local-set-key (kbd "M-.") 'rtags-find-symbol)
 
   ;; switch .c <--> .h files
   (local-set-key (kbd "C-c C-h") 'ff-find-related-file)
 
+  (local-set-key (kbd "C-c c") nil)
+  (local-set-key (kbd "C-c C-s") nil)
+
   (local-set-key (kbd "C-c c c") 'lg-compile)
   (local-set-key (kbd "C-c c t") 'lg-compile-ctest-target)
-  (local-set-key (kbd "C-c c d") 'lg-disaster) ; inplace disassembler
-  (local-set-key (kbd "C-c C-s") 'lg-switch-to-scratch))
+  )
 
 (add-hook 'c-mode-hook 'lg-c-mode-customize)
 (add-hook 'c++-mode-hook 'lg-c-mode-customize)
@@ -1822,6 +1969,7 @@ auto-insert-alist)
 (setq fci-rule-color "gray75")
 
 ;;; Scad-mode
+(autoload 'scad-preview--start "scad-preview" "Start preview scad.")
 
 (setq scad-preview-window-position 'below)
 (setq scad-preview-window-size 10)
@@ -1936,7 +2084,38 @@ Save only if previously it was loaded or called interactively."
 
 ;;{{{ `-- Telega (telegram client)
 
+;; c-mode for autogenerated .tl files
+(add-to-list 'auto-mode-alist '("\\.tl\\'" . c-mode))
+
+(autoload 'find-library-name "find-func")
+(autoload 'sound-wav-play "sound-wav")
 (autoload 'telega "telega" "Telegram client" t)
+
+(autoload 'telega-notifications-mode "telega-notifications")
+
+;; Two lines chat button inserter
+(setq telega-inserter-chat-button 'telega-ins--advanced-chat-button)
+
+(defun lg-telega-setup ()
+;  (telega-notifications-mode 1)
+
+  (set-face-attribute 'telega-entity-type-pre nil :height 300)
+  (set-face-attribute 'telega-entity-type-code nil :height 300)
+  )
+
+(defun lg-telega-msgin (msg disable-notification)
+  (unless disable-notification
+    (sound-wav-play (find-library-name "etc/telegram-msgin.wav")))
+
+    (let ((buff (with-telega-chatbuf (telega-msg--chat msg)
+                  (current-buffer))))
+      (when buff
+        (tracking-add-buffer buff))))
+
+(add-hook 'telega-chat-message-hook 'lg-telega-msgin)
+(add-hook 'telega-root-mode-hook 'lg-telega-setup)
+
+;(setq telega-eliding-string "\U00002026") ; …
 (setq telega-eliding-string (make-string 3 #x00b7))
 (setq telega-filter-custom-expand t)
 
@@ -2009,21 +2188,3 @@ Or run `call-last-kbd-macro' otherwise."
 ;; Load last desktop
 ;(lg-desktop-load)
 (message (format "+ %s loaded, M-x lg-desktop-load RET to load desktop" user-init-file))
-
-;;;;
-(custom-set-variables
- ;; custom-set-variables was added by Custom.
- ;; If you edit it by hand, you could mess it up, so be careful.
- ;; Your init file should contain only one such instance.
- ;; If there is more than one, they won't work right.
- '(package-selected-packages
-   (quote
-    (pabbrev stripe-buffer all-the-icons travis wanderlust markdown-mode gitter scad-mode scad-preview nhexl-mode rust-mode cython-mode gh smartparens lua-mode highlight-current-line ein gitlab ponylang-mode pycoverage wolfram circe gist yaml-mode smart-compile rudel folding origami git-gutter-fringe+ google-translate cmake-project coverlay irony-eldoc multitran fill-column-indicator rtags auto-complete-clang disaster haskell-mode autopair nim-mode irony cmake-mode git-gutter dash auctex undo-tree elpy)))
- '(send-mail-function (quote smtpmail-send-it)))
-(custom-set-faces
- ;; custom-set-faces was added by Custom.
- ;; If you edit it by hand, you could mess it up, so be careful.
- ;; Your init file should contain only one such instance.
- ;; If there is more than one, they won't work right.
- )
-(put 'timer-list 'disabled nil)
