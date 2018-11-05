@@ -11,7 +11,7 @@
  '(custom-safe-themes
    '("fd236703d59b15f5fb5c8a109cdf102a7703da164231d199badcf05fe3467748" default))
  '(package-selected-packages
-   '(flycheck flycheck-cython flycheck-pycheckers elpygen magit "company" company-emoji emojify sound-wav visual-fill-column pabbrev stripe-buffer all-the-icons travis wanderlust markdown-mode gitter scad-mode scad-preview nhexl-mode rust-mode cython-mode gh smartparens lua-mode highlight-current-line ein gitlab ponylang-mode pycoverage wolfram circe gist yaml-mode smart-compile rudel folding origami git-gutter-fringe+ google-translate cmake-project coverlay irony-eldoc multitran fill-column-indicator rtags auto-complete-clang disaster haskell-mode autopair nim-mode irony cmake-mode git-gutter dash auctex undo-tree elpy))
+   '(flycheck flycheck-cython flycheck-pycheckers elpygen magit "company" company-emoji emojify sound-wav visual-fill-column pabbrev stripe-buffer all-the-icons travis wanderlust markdown-mode gitter scad-mode scad-preview nhexl-mode rust-mode cython-mode gh smartparens lua-mode highlight-current-line ein gitlab ponylang-mode pycoverage wolfram circe gist yaml-mode smart-compile rudel folding origami git-gutter-fringe+ google-translate cmake-project coverlay irony-eldoc fill-column-indicator rtags auto-complete-clang disaster haskell-mode autopair nim-mode irony cmake-mode git-gutter dash auctex undo-tree elpy))
  '(send-mail-function 'smtpmail-send-it))
 (custom-set-faces
  ;; custom-set-faces was added by Custom.
@@ -35,15 +35,11 @@
 (add-to-list 'package-archives
              '("melpa" . "https://melpa.org/packages/"))
 
-;; Note: Not needed in emacs27
+;; NOTE: Not needed in emacs27
 ;(package-initialize)
 
 (push "~/.emacs.d/lisp" load-path)
-(push "~/.emacs.d/thirdparty" load-path)
-(push "~/dev/gnu-emacs-stuff" load-path)
-(push "~/dev/gnu-emacs-stuff/thirdpart" load-path)
-(push "~/dev/emacs-stuff" load-path)
-(push "~/dev/emacs-stuff/thirdpart" load-path)
+(push "~/.emacs.d/thirdpart" load-path)
 ;; for git and git-blame
 (push "/usr/share/git-core/emacs" load-path)
 
@@ -135,12 +131,6 @@
  )
 
 (enable-theme 'lg-xemacs-like)
-
-;;
-;(set-face-font
-; 'default "-xos4-terminus-medium-r-normal--32-320-72-72-c-160-koi8-r")
-; (set-face-attribute 'default nil :family "Inconsolata LGC")
-; (set-face-attribute 'default nil :height 240)
 
 ;; See https://github.com/zevlg/RictyDiminishedL
 (set-face-attribute 'default nil :family "RictyDiminishedL")
@@ -1196,7 +1186,7 @@ If prefix ARG is given then insert result into the current buffer."
 
 ;; Builtint `python-mode' is slow in emacs 25, so use this one
 ;; https://gitlab.com/python-mode-devs/python-mode.git
-(push "~/.emacs.d/python-mode" load-path)
+(push "~/.emacs.d/thirdpart/python-mode" load-path)
 (require 'python-mode)
 
 ;; make flymake marks more visible
@@ -1969,6 +1959,27 @@ auto-insert-alist)
 (setq fci-rule-color "gray75")
 
 ;;; Scad-mode
+(add-to-list 'compilation-error-regexp-alist 'scad)
+
+;; Define a regex to parse openscad's compilation message to jump over
+;; error or warning points.
+(add-to-list
+ 'compilation-error-regexp-alist-alist
+ `(scad
+   ,(rx line-start
+        (group-n 4 "ERROR: ")
+        "Parser error in line "
+        (group-n 2 (1+ digit))
+        ": syntax error\n"
+         ;; filename
+        "\nCan't parse file '"
+        (group-n 1 (1+ (in alnum "\\" "/" "_" "." "-") "") ".scad")
+        "'!"
+        ;; Capture rest of message
+        (0+ any) line-end)
+   ;; See `compilation-error-regexp-alist's document for the detail
+   1 2 3 (4 . 5)))
+
 (autoload 'scad-preview--start "scad-preview" "Start preview scad.")
 
 (setq scad-preview-window-position 'below)
@@ -1981,9 +1992,10 @@ auto-insert-alist)
   (interactive)
   (let ((out-prefix (if (file-exists-p "stl/") "stl/" "")))
     (compile
-     (concat scad-command "-o " out-prefix
+     (concat scad-command " -o " out-prefix
              (file-name-base buffer-file-name) ".stl"
-             " " buffer-file-name))))
+             " " buffer-file-name))
+    ))
 
 (defun lg-scad-mode-init ()
   (local-set-key (kbd "C-c c c") 'lg-scad-compile)
@@ -2112,7 +2124,7 @@ Save only if previously it was loaded or called interactively."
       (when buff
         (tracking-add-buffer buff))))
 
-(add-hook 'telega-chat-message-hook 'lg-telega-msgin)
+;(add-hook 'telega-chat-message-hook 'lg-telega-msgin)
 (add-hook 'telega-root-mode-hook 'lg-telega-setup)
 
 ;(setq telega-eliding-string "\U00002026") ; …
@@ -2178,12 +2190,12 @@ Or run `call-last-kbd-macro' otherwise."
 (ignore-errors
   (require 'home))
 
-(let ((exwm-debug-on t))
-  (load-library "exwmrc"))
-
-;; Enable EXWM for non-tty emacs
-(when window-system
-  (exwm-enable))
+(ignore-errors
+  (let ((exwm-debug-on t))
+    (load-library "exwmrc")
+    ;; Enable EXWM for non-tty emacs
+    (when window-system
+      (exwm-enable))))
 
 ;; Load last desktop
 ;(lg-desktop-load)
