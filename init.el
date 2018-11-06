@@ -578,19 +578,16 @@ ADDR is string in form [<HOST>:]<PORT>"
     (run-hooks 'netcat-hook)))
 
 (defun lg-fixup-whitespace (arg)
-  "Without prefix ARG run `fixup-whitespace'.
+  "Without prefix ARG run `delete-horizontal-space'.
 With prefix ARG run `just-one-space'."
   (interactive "*P")
   (save-excursion
     (delete-horizontal-space)
-    (when (or arg
-              (not (or (looking-at "$\\|^\\|\\s)")
-                       (save-excursion (forward-char -1)
-                                       (looking-at "$\\|\\s(\\|\\s'")))))
+    (when arg
       (insert ?\s))))
 
 (define-key global-map (kbd "M-\\") 'lg-fixup-whitespace)
-(define-key global-map (kbd "C-c <space>") 'lg-fixup-whitespace)
+(define-key global-map (kbd "C-c SPC") 'just-one-space)
 
 ;; Do M-x lg-try-luck RET before serious work
 (defun lg-try-luck (&optional luck-arg)

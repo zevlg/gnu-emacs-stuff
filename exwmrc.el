@@ -3,14 +3,54 @@
 ;; v0.9 - e58ac743f97a005bb737e234a1eb1d467ed84bde
 (push "~/dev/xelb" load-path)
 
+;; Enable debugging
+(setq exwm-debug-on t)
+
 (defun lg-minibuf-focus-in ()
   (select-frame-set-input-focus (selected-frame) t))
 
 (defun lg-minibuf-focus-out ()
   (exwm-input--update-focus))
 
+;; remove idle timer hackery, minibuffer height won't grow
+(remove-hook 'minibuffer-setup-hook 'exwm-layout--on-minibuffer-setup)
+
 (add-hook 'minibuffer-setup-hook 'lg-minibuf-focus-in)
 (add-hook 'minibuffer-exit-hook 'lg-minibuf-focus-out)
+
+
+(defun lg--exwm-client-info ()
+
+;; (define-xwem-command xwem-help-client-info (cl)
+;;   "Display information about current client."
+;;   (xwem-interactive (list (xwem-cl-selected)))
+;;   (xwem-help-display (format "%s" (xwem-client-name cl))
+;;     (insert (format (concat "Manage Type: %s\n"
+;;                             "Application: %s\n"
+;;                             "Uptime: %s\n"
+;;                             "\n")
+;;                     (upcase (symbol-name (xwem-cl-manage-type cl)))
+;;                     (or (car (xwem-client-application cl)) "UNKNOWN")
+;;                     (xwem-cl-get-uptime cl)))
+;;     (when (xwem-local-map cl)
+;;       (xwem-describe-prefix-bindings-1 (xwem-local-map cl) nil
+;;         (format "Client local bindings:"))
+;;       (insert "\n"))
+      
+;;     (let ((xwi (shell-command-to-string 
+;;                 (format "xwininfo -all -id 0x%x"
+;;                         (X-Win-id (xwem-cl-xwin cl))))))
+;;       (insert (decode-coding-string xwi (xwem-misc-locale-coding-system)) "\n"))
+
+;;     (let ((xpr (shell-command-to-string
+;;                 (format "xprop -id 0x%x"
+;;                         (X-Win-id (xwem-cl-xwin cl))))))
+;;       (insert (format "xprop: Window id: 0x%x %S\n\n"
+;;                       (X-Win-id (xwem-cl-xwin cl))
+;;                       (xwem-client-name cl)))
+;;       (insert (decode-coding-string xpr (xwem-misc-locale-coding-system)) "\n"))
+;;     ))
+)
 
 
 (require 'exwm)
@@ -129,8 +169,8 @@
                       (mapcar 'buffer-name (exwm--x-list '(exwm-mode))) nil t))))
   (exwm-wconf-pop-to-buffer buf))
 
-(exwm-input-set-key (kbd "C-x b") 'ido-switch-buffer)
 (exwm-input-set-key (kbd "H-x b") 'lg-ido-switch-app)
+(exwm-input-set-key (kbd "H-x H-b") 'ido-switch-buffer)
 (exwm-input-set-key (kbd "H-:") 'eval-expression)
 (exwm-input-set-key (kbd "H-C-x") 'execute-extended-command)
 (exwm-input-set-key (kbd "H-M-x") 'execute-extended-command)
@@ -178,7 +218,7 @@
   "Start lupe."
   (interactive)
   (start-process "" nil
-                 "~/bin/lupe" "-override_redirect" "-font" "10x20" "-noshape" "-nohud" "-mag" "3"
+                 "lupe" "-override_redirect" "-font" "10x20" "-noshape" "-nohud" "-mag" "3"
                  "-geometry" (lg-lupe-geometry))
   (exwm-input-set-key (kbd "H-+") 'lg-xwem-lupe-out))
 
@@ -206,7 +246,16 @@
 (exwm-input-set-key (kbd "H-f") 'exwm--forward-app)
 (exwm-input-set-key (kbd "H-b") 'exwm--backward-app)
 
-(exwm-input-set-key (kbd "H-c d") 'multitran)
+(defun lg--exwm-multitran (word)
+  "Check primary selection for the current word."
+  (interactive (list (gui-selection-value)))
+  (if word
+      (with-temp-buffer
+        (insert word)
+        (call-interactively 'multitran))
+    (call-interactively 'multitran)))
+
+(exwm-input-set-key (kbd "H-c d") 'lg--exwm-multitran)
 
 ;;;
 (defun lg--exwm-kbd-quit ()
