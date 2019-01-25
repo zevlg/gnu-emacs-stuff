@@ -11,7 +11,8 @@
  '(custom-safe-themes
    '("fd236703d59b15f5fb5c8a109cdf102a7703da164231d199badcf05fe3467748" default))
  '(package-selected-packages
-   '(keycast use-package company-lsp lsp-clangd lsp-mode lsp-python lsp-rust lsp-ui flycheck flycheck-cython flycheck-pycheckers elpygen magit "company" company-emoji emojify sound-wav visual-fill-column pabbrev stripe-buffer all-the-icons travis wanderlust markdown-mode gitter scad-mode scad-preview nhexl-mode rust-mode cython-mode gh smartparens lua-mode highlight-current-line ein gitlab ponylang-mode pycoverage wolfram circe gist yaml-mode smart-compile rudel folding origami git-gutter-fringe+ google-translate cmake-project coverlay irony-eldoc fill-column-indicator rtags auto-complete-clang disaster haskell-mode autopair nim-mode irony cmake-mode git-gutter dash auctex undo-tree elpy))
+   '(keycast use-package company-lsp lsp-clangd lsp-mode lsp-python lsp-rust lsp-ui flycheck flycheck-cython flycheck-pycheckers elpygen magit "company" company-emoji emojify sound-wav visual-fill-column pabbrev stripe-buffer all-the-icons travis wande
+rlust markdown-mode gitter scad-mode scad-preview nhexl-mode rust-mode cython-mode gh smartparens lua-mode highlight-current-line ein gitlab ponylang-mode pycoverage wolfram circe gist yaml-mode smart-compile rudel folding origami git-gutter-fringe+ google-translate cmake-project coverlay irony-eldoc fill-column-indicator rtags auto-complete-clang disaster haskell-mode autopair nim-mode irony cmake-mode git-gutter dash auctex undo-tree elpy))
  '(safe-local-variable-values
    '((projectile-project-run-cmd . "mkdir -p build; cd build; cmake ..; make run")
      (projectile-project-compilation-cmd . "mkdir -p build; cd build; cmake ..; make")))
@@ -485,14 +486,12 @@ Otherwise toggle."
 
 (defvar lg-scratch-file (expand-file-name "~/.emacs.d/*scratch-file*"))
 
-(defun lg-switch-to-scratch (arg)
+(defun lg-switch-to-scratch (&optional arg)
   "Switch to \\*scratch\\* buffer.
 If prefix ARG is specified, switch in other window."
   (interactive "P")
-  (let ((scbuf (find-file-noselect lg-scratch-file)))
-    (if arg
-        (switch-to-buffer-other-window scbuf)
-      (switch-to-buffer scbuf))))
+  (funcall (if arg 'switch-to-buffer-other-window 'switch-to-buffer)
+           (find-file-noselect lg-scratch-file)))
 
 (defun lg-install-switch-to-scratch ()
   (local-set-key (kbd "C-c C-s") nil))
@@ -784,12 +783,24 @@ CSTR can contain special escape sequences:
 (advice-add 'vc-deduce-fileset :around #'lg-git-status-vc-deduce-fileset)
 
 ;; Paste to gist
+(defvar lg-gist-description nil
+  "Description for the gist currently importing.
+Bind it to change the description.")
+
+;; Override it to take first few chars of the gist as description
+(defun gist-ask-for-description-maybe ()
+  lg-gist-description)
+
 (defun lg-gist-region (begin end &optional arg)
   "Paste region to gist.
 If prefix ARG is specified - create public gist."
   (interactive "r\nP")
 
-  (gist-region begin end (not arg))
+  (let ((lg-gist-description
+         (replace-regexp-in-string
+          "\n" " " (buffer-substring
+                    begin (if (> (- end begin) 30) (+ begin 30) end)))))
+    (gist-region begin end (not arg)))
 
   ;; GNU Emacs keeps region active after evaluation, so force
   ;; deactivation
@@ -1158,16 +1169,17 @@ If prefix ARG is given then insert result into the current buffer."
 (define-key global-map (kbd "C-c l h") 'list-command-history)
 (define-key global-map (kbd "C-c l c") 'list-colors-display)
 (define-key global-map (kbd "C-c l f") 'list-faces-display)
-(define-key global-map (kbd "C-c l i") 'timer-list)
+(define-key global-map (kbd "C-c l i") 'list-timers)
 (define-key global-map (kbd "C-c l m") 'list-matching-lines)
 (define-key global-map (kbd "C-c l t") 'describe-text-properties)
 (define-key global-map (kbd "C-c l p") 'list-processes)
-(define-key global-map (kbd "C-c l s") 'list-strokes)
+(define-key global-map (kbd "C-c l s") 'strokes-list-strokes)
 (define-key global-map (kbd "C-c l .") 'list-tags)
 (define-key global-map (kbd "C-c l k") 'browse-kill-ring)
 (define-key global-map (kbd "C-c l r") 'list-registers)
 (define-key global-map (kbd "C-c l o") 'list-packages)
 (define-key global-map (kbd "C-c l w") 'whitespace-report)
+(define-key global-map (kbd "C-c l g") 'gist-list)
 
 ;;}}}
 
@@ -1401,31 +1413,19 @@ If prefix ARG is given then insert result into the current buffer."
 ;; Author: Zajcev Evgeny <zevlg@yandex.ru>
 ;; Created: " (current-time-string) "
 ;; Keywords: "
-        '(require 'finder)
-        ;;'(setq v1 (apply 'vector (mapcar 'car finder-known-keywords)))
-        '(setq v1 (mapcar (lambda (x) (list (symbol-name (car x))))
-                          finder-known-keywords)
-               v2 (mapconcat (lambda (x) (format "%10.0s:  %s" (car x) (cdr x)))
-                             finder-known-keywords
-                             "\n"))
-        ((let ((minibuffer-help-form v2))
-           (completing-read "Keyword, C-h: " v1 nil t))
-         str ", ") & -2 "
+        ;; '(require 'finder)
+        ;; ;;'(setq v1 (apply 'vector (mapcar 'car finder-known-keywords)))
+        ;; '(setq v1 (mapcar (lambda (x) (list (symbol-name (car x))))
+        ;;                   finder-known-keywords)
+        ;;        v2 (mapconcat (lambda (x) (format "%10.0s:  %s" (car x) (cdr x)))
+        ;;                      finder-known-keywords
+        ;;                      "\n"))
+        ;; ((let ((minibuffer-help-form v2))
+        ;;    (completing-read "Keyword, C-h: " v1 nil t))
+        ;;  str ", ") & -2 "
+"
 
-;; This file is part of GNU Emacs.
-
-;; GNU Emacs is free software: you can redistribute it and/or modify
-;; it under the terms of the GNU General Public License as published by
-;; the Free Software Foundation, either version 3 of the License, or
-;; (at your option) any later version.
-
-;; GNU Emacs is distributed in the hope that it will be useful,
-;; but WITHOUT ANY WARRANTY; without even the implied warranty of
-;; MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-;; GNU General Public License for more details.
-
-;; You should have received a copy of the GNU General Public License
-;; along with GNU Emacs.  If not, see <http://www.gnu.org/licenses/>.
+;; LICENSE GOES HERE
 
 ;;; Commentary:
 
@@ -2116,48 +2116,26 @@ Save only if previously it was loaded or called interactively."
 (setq telega-debug t)
 (add-to-list 'auto-mode-alist '("\\.tl\\'" . c-mode))
 
-(autoload 'find-library-name "find-func")
-(autoload 'sound-wav-play "sound-wav")
 (autoload 'telega "telega" "Telegram client" t)
 
-(autoload 'telega-notifications-mode "telega-notifications")
+(setq telega-debug t)
+(setq telega-voip-use-sounds t)
+(setq telega-use-notifications t)
 (setq telega-use-tracking t)
-
 (setq telega-root-fill-column 80)
-(setq telega-chat-fill-column 80)
-(setq telega-webpage-fill-column 80)
 
 (setq telega-symbol-eliding "…")
 
-(defun my-telega-load ()
-  (telega-symbol-set-widths
-   `((2 ,telega-symbol-eliding "∏")))
-  )
-
-(add-hook 'telega-load-hook 'my-telega-load)
-
-(defun lg-telega-setup ()
-;  (telega-notifications-mode 1)
-
+(defun lg-telega-load ()
+  ;; Install custom symbols widths
   (set-face-attribute 'telega-entity-type-pre nil :height 300)
   (set-face-attribute 'telega-entity-type-code nil :height 300)
+
+  ;; (telega-symbol-set-widths
+  ;;  `((2 ,telega-symbol-eliding "∏")))
   )
 
-(defun lg-telega-msgin (msg disable-notification)
-  (unless disable-notification
-    (sound-wav-play (find-library-name "etc/telegram-msgin.wav")))
-
-    (let ((buff (with-telega-chatbuf (telega-msg--chat msg)
-                  (current-buffer))))
-      (when buff
-        (tracking-add-buffer buff))))
-
-;(add-hook 'telega-chat-message-hook 'lg-telega-msgin)
-(add-hook 'telega-root-mode-hook 'lg-telega-setup)
-
-;(setq telega-eliding-string "\U00002026") ; …
-(setq telega-eliding-string (make-string 3 #x00b7))
-(setq telega-filter-custom-expand t)
+(add-hook 'telega-load-hook 'lg-telega-load)
 
 (define-key global-map (kbd "C-c t") 'telega)
 
@@ -2228,3 +2206,4 @@ Or run `call-last-kbd-macro' otherwise."
 ;; Load last desktop
 ;(lg-desktop-load)
 (message (format "+ %s loaded, M-x lg-desktop-load RET to load desktop" user-init-file))
+(lg-switch-to-scratch)
