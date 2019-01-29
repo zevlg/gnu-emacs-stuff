@@ -274,7 +274,7 @@ bottom of the buffer stack."
 (setq show-paren-data-function #'lg-show-paren-surround)
 
 ;; NOTE: gray83 looks good on tty and X (with background=gray80)
-(set-face-background 'show-paren-match "gray83")
+(set-face-background 'show-paren-match "gray90")
 (set-face-background 'show-paren-mismatch "#FFFF00")
 (set-face-foreground 'show-paren-mismatch nil)
 
