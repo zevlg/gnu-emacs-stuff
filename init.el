@@ -11,8 +11,7 @@
  '(custom-safe-themes
    '("fd236703d59b15f5fb5c8a109cdf102a7703da164231d199badcf05fe3467748" default))
  '(package-selected-packages
-   '(keycast use-package company-lsp lsp-clangd lsp-mode lsp-python lsp-rust lsp-ui flycheck flycheck-cython flycheck-pycheckers elpygen magit "company" company-emoji emojify sound-wav visual-fill-column pabbrev stripe-buffer all-the-icons travis wande
-rlust markdown-mode gitter scad-mode scad-preview nhexl-mode rust-mode cython-mode gh smartparens lua-mode highlight-current-line ein gitlab ponylang-mode pycoverage wolfram circe gist yaml-mode smart-compile rudel folding origami git-gutter-fringe+ google-translate cmake-project coverlay irony-eldoc fill-column-indicator rtags auto-complete-clang disaster haskell-mode autopair nim-mode irony cmake-mode git-gutter dash auctex undo-tree elpy))
+   '(flycheck-plantuml plantuml-mode org-jira keycast use-package company-lsp lsp-clangd lsp-mode lsp-python lsp-rust lsp-ui flycheck flycheck-cython flycheck-pycheckers elpygen magit "company" company-emoji emojify sound-wav visual-fill-column pabbrev stripe-buffer all-the-icons travis wanderlust markdown-mode gitter scad-mode scad-preview nhexl-mode rust-mode cython-mode gh smartparens lua-mode highlight-current-line ein gitlab ponylang-mode pycoverage wolfram circe gist yaml-mode smart-compile rudel folding origami git-gutter-fringe+ google-translate cmake-project coverlay irony-eldoc fill-column-indicator rtags auto-complete-clang disaster haskell-mode autopair nim-mode irony cmake-mode git-gutter dash auctex undo-tree elpy))
  '(safe-local-variable-values
    '((projectile-project-run-cmd . "mkdir -p build; cd build; cmake ..; make run")
      (projectile-project-compilation-cmd . "mkdir -p build; cd build; cmake ..; make")))
@@ -427,8 +426,9 @@ Use `C-u' prefix to select languages."
 
 ;;{{{ `-- Different bindings
 
-;;; Remove annoying iconifying
+;;; Remove annoying bindings
 (define-key global-map (kbd "C-z") 'nil)
+(define-key global-map (kbd "C-x C-=") 'nil)
 
 (define-key global-map (kbd "C-=") 'what-cursor-position)
 (define-key global-map (kbd "M-=") 'count-words)
@@ -998,6 +998,8 @@ M-{ causes next skeleton insertation.
       (dot-mode-execute))))
 
 (define-key dot-mode-map (kbd "C-.") 'lg-dot-mode-execute)
+
+;; Show `dot-mode-cmd-buffer' in modeline
 
 ;;}}}
 
@@ -2119,23 +2121,25 @@ Save only if previously it was loaded or called interactively."
 (autoload 'telega "telega" "Telegram client" t)
 
 (setq telega-debug t)
+(setq telega-filter-custom-expand t)
 (setq telega-voip-use-sounds t)
-(setq telega-use-notifications t)
 (setq telega-use-tracking t)
+
 (setq telega-root-fill-column 80)
 
 (setq telega-symbol-eliding "…")
 
-(defun lg-telega-load ()
+(defun my-telega-load ()
   ;; Install custom symbols widths
+  (telega-symbol-set-width telega-symbol-eliding 2)
+  (telega-symbol-set-width "∏" 2)
+  (telega-symbol-set-width "∑" 2)
+
   (set-face-attribute 'telega-entity-type-pre nil :height 300)
   (set-face-attribute 'telega-entity-type-code nil :height 300)
-
-  ;; (telega-symbol-set-widths
-  ;;  `((2 ,telega-symbol-eliding "∏")))
   )
 
-(add-hook 'telega-load-hook 'lg-telega-load)
+(add-hook 'telega-load-hook 'my-telega-load)
 
 (define-key global-map (kbd "C-c t") 'telega)
 
