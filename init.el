@@ -11,7 +11,7 @@
  '(custom-safe-themes
    '("fd236703d59b15f5fb5c8a109cdf102a7703da164231d199badcf05fe3467748" default))
  '(package-selected-packages
-   '(goto-last-change keycast use-package company-lsp lsp-clangd lsp-mode lsp-python lsp-rust lsp-ui flycheck flycheck-cython flycheck-pycheckers elpygen magit "company" company-emoji emojify sound-wav visual-fill-column pabbrev stripe-buffer all-the-icons travis wande rlust markdown-mode gitter scad-mode scad-preview nhexl-mode rust-mode cython-mode gh smartparens lua-mode highlight-current-line ein gitlab ponylang-mode pycoverage wolfram circe gist yaml-mode smart-compile rudel folding origami git-gutter-fringe+ google-translate cmake-project coverlay irony-eldoc fill-column-indicator rtags auto-complete-clang disaster haskell-mode autopair nim-mode irony cmake-mode git-gutter dash auctex undo-tree elpy))
+   '(helm-git-grep helm helm-company helm-directory helm-exwm helm-git-files org-jira goto-last-change keycast use-package company-lsp lsp-clangd lsp-mode lsp-python lsp-rust lsp-ui flycheck flycheck-cython flycheck-pycheckers elpygen magit "company" company-emoji emojify sound-wav visual-fill-column pabbrev stripe-buffer all-the-icons travis wande rlust markdown-mode gitter scad-mode scad-preview nhexl-mode rust-mode cython-mode gh smartparens lua-mode highlight-current-line ein gitlab ponylang-mode pycoverage wolfram circe gist yaml-mode smart-compile rudel folding origami git-gutter-fringe+ google-translate cmake-project coverlay irony-eldoc fill-column-indicator rtags auto-complete-clang disaster haskell-mode autopair nim-mode irony cmake-mode git-gutter dash auctex undo-tree elpy))
  '(safe-local-variable-values
    '((projectile-project-run-cmd . "mkdir -p build; cd build; cmake ..; make run")
      (projectile-project-compilation-cmd . "mkdir -p build; cd build; cmake ..; make")))
@@ -158,6 +158,17 @@
          browse-kill-ring-highlight-inserted-item t)
    :config
    (browse-kill-ring-default-keybindings))
+
+(use-package org
+  :init
+  (setq org-log-done t)
+  :bind (("C-c o a" . org-agenda)
+         ("C-c o l" . org-store-link)))
+
+(use-package helm
+  :config
+  (set-face-attribute 'helm-source-header nil :height 0.85)
+  )
 
 ;(use-package moccur-edit)
 
@@ -810,6 +821,19 @@ If prefix ARG is specified - create public gist."
   ;; deactivation
   (deactivate-mark))
 
+(defun lg-buffer-file-git-p (&optional buffer)
+  "Return non-nil if BUFFER's file is tracked in git."
+  (vc-git-responsible-p (or (buffer-file-name buffer) default-directory)))
+
+(defun lg-grep-maybe-git ()
+  "If file is tracked by git, then use `helm-git-grep'.
+Otherwise drop to `lg-grep'."
+  (interactive)
+  (if (lg-buffer-file-git-p)
+      (helm-git-grep-1 (grep-tag-default))
+;      (call-interactively 'helm-git-grep)
+    (call-interactively 'lg-grep)))
+
 ;;}}}
 
 ;;{{{   `-- C-o - Prefix for -other- commands
@@ -1137,7 +1161,7 @@ If prefix ARG is given then insert result into the current buffer."
 (define-key global-map (kbd "C-c r s") 're-search-forward)
 (define-key global-map (kbd "C-c r r") 're-search-backward)
 (define-key global-map (kbd "C-c r e") 'query-replace-regexp)
-(define-key global-map (kbd "C-c r g") 'lg-grep)
+(define-key global-map (kbd "C-c r g") 'lg-grep-maybe-git)
 (define-key global-map (kbd "C-c r o") 'occur)
 
 ;; C-cm Prefix for MISC commands
@@ -2124,28 +2148,51 @@ Save only if previously it was loaded or called interactively."
 
 (autoload 'telega "telega" "Telegram client" t)
 
+(defun lg-telega-saved-messages ()
+  "Switch to SavedMessages buffer."
+  (interactive)
+  (telega-chat--pop-to-buffer (telega-chat-me)))
+
+(define-key global-map (kbd "C-c C-t") 'lg-telega-saved-messages)
+(define-key global-map (kbd "C-c t") 'telega)
+
 (setq telega-debug t)
 (setq telega-filter-custom-expand t)
 (setq telega-voip-use-sounds t)
 (setq telega-use-tracking t)
 
 (setq telega-root-fill-column 80)
+;(setq telega-chat-fill-column 70)
 
 (setq telega-symbol-eliding "…")
 
-(defun my-telega-load ()
+
+(defun lg-telega-root-mode ()
+  (hl-line-mode 1 ))
+
+(add-hook 'telega-root-mode-hook 'lg-telega-root-mode)
+
+(autoload 'telega-company-emoji "telega-company" "emoji backend" t)
+(autoload 'telega-company-username "telega-company" "username backend" t)
+
+(defun lg-telega-chat-mode ()
+  (setq company-backends
+        (list 'telega-company-emoji 'telega-company-username))
+  (company-mode 1))
+
+(add-hook 'telega-chat-mode-hook 'lg-telega-chat-mode)
+
+(defun lg-telega-load ()
   ;; Install custom symbols widths
   (telega-symbol-set-width telega-symbol-eliding 2)
   (telega-symbol-set-width "∏" 2)
   (telega-symbol-set-width "∑" 2)
 
-  (set-face-attribute 'telega-entity-type-pre nil :height 300)
-  (set-face-attribute 'telega-entity-type-code nil :height 300)
+  (set-face-attribute 'telega-entity-type-pre nil :height 0.85)
+  (set-face-attribute 'telega-entity-type-code nil :height 0.85)
   )
 
-(add-hook 'telega-load-hook 'my-telega-load)
-
-(define-key global-map (kbd "C-c t") 'telega)
+(add-hook 'telega-load-hook 'lg-telega-load)
 
 ;;}}}
 
@@ -2187,6 +2234,7 @@ Or run `call-last-kbd-macro' otherwise."
       (call-interactively #'apply-macro-to-region-lines)
     (call-interactively #'kmacro-call-macro)))
 
+(define-key global-map (kbd "<f9>") 'lg-end-and-call-macro)
 (define-key global-map (kbd "C-x e") 'lg-end-and-call-macro)
 
 ;;}}}
@@ -2215,3 +2263,4 @@ Or run `call-last-kbd-macro' otherwise."
 ;(lg-desktop-load)
 (message (format "+ %s loaded, M-x lg-desktop-load RET to load desktop" user-init-file))
 (lg-switch-to-scratch)
+(put 'list-timers 'disabled nil)
