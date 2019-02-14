@@ -22,7 +22,7 @@
  ;; Your init file should contain only one such instance.
  ;; If there is more than one, they won't work right.
  )
-(put 'timer-list 'disabled nil)
+(put 'list-timers 'disabled nil)
 
 
 ;; On new host do
@@ -256,6 +256,7 @@ bottom of the buffer stack."
 (autoload 'goto-last-change "goto-last-change"
   "Set point to the position of the last change." t)
 (global-set-key (kbd "C-c C-/") 'goto-last-change)
+(global-set-key (kbd "C-c C-l") 'goto-last-change)
 
 (global-undo-tree-mode)
 
@@ -2162,10 +2163,9 @@ Save only if previously it was loaded or called interactively."
 (setq telega-use-tracking t)
 
 (setq telega-root-fill-column 80)
-;(setq telega-chat-fill-column 70)
+(setq telega-chat-fill-column 80)
 
 (setq telega-symbol-eliding "…")
-
 
 (defun lg-telega-root-mode ()
   (hl-line-mode 1 ))
@@ -2263,4 +2263,3 @@ Or run `call-last-kbd-macro' otherwise."
 ;(lg-desktop-load)
 (message (format "+ %s loaded, M-x lg-desktop-load RET to load desktop" user-init-file))
 (lg-switch-to-scratch)
-(put 'list-timers 'disabled nil)
