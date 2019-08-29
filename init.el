@@ -11,7 +11,7 @@
  '(custom-safe-themes
    '("fd236703d59b15f5fb5c8a109cdf102a7703da164231d199badcf05fe3467748" default))
  '(package-selected-packages
-   '(helm-git-grep helm helm-company helm-directory helm-exwm helm-git-files org-jira goto-last-change keycast use-package company-lsp lsp-clangd lsp-mode lsp-python lsp-rust lsp-ui flycheck flycheck-cython flycheck-pycheckers elpygen magit "company" company-emoji emojify sound-wav visual-fill-column pabbrev stripe-buffer all-the-icons travis wande rlust markdown-mode gitter scad-mode scad-preview nhexl-mode rust-mode cython-mode gh smartparens lua-mode highlight-current-line ein gitlab ponylang-mode pycoverage wolfram circe gist yaml-mode smart-compile rudel folding origami git-gutter-fringe+ google-translate cmake-project coverlay irony-eldoc fill-column-indicator rtags auto-complete-clang disaster haskell-mode autopair nim-mode irony cmake-mode git-gutter dash auctex undo-tree elpy))
+   '(projectile tracking company-tabnine alert rainbow-identifiers page-break-lines quelpa-use-package package-lint pdf-tools evil go-scratch go-autocomplete go-complete go-eldoc go-mode ibuffer-git ibuffer-vc emms emoji-cheat-sheet-plus helm-git-grep helm helm-company helm-directory helm-exwm helm-git-files org-jira goto-last-change keycast use-package company-lsp lsp-clangd lsp-mode lsp-python lsp-rust lsp-ui flycheck flycheck-cython flycheck-pycheckers elpygen magit "company" company-emoji emojify sound-wav visual-fill-column pabbrev stripe-buffer all-the-icons travis wande rlust markdown-mode gitter scad-mode scad-preview nhexl-mode rust-mode cython-mode gh smartparens lua-mode highlight-current-line ein gitlab ponylang-mode pycoverage wolfram circe gist yaml-mode smart-compile rudel folding origami git-gutter-fringe+ google-translate cmake-project coverlay irony-eldoc fill-column-indicator rtags auto-complete-clang disaster haskell-mode autopair nim-mode irony cmake-mode git-gutter dash auctex undo-tree elpy))
  '(safe-local-variable-values
    '((projectile-project-run-cmd . "mkdir -p build; cd build; cmake ..; make run")
      (projectile-project-compilation-cmd . "mkdir -p build; cd build; cmake ..; make")))
@@ -39,6 +39,7 @@
              '("melpa" . "https://melpa.org/packages/"))
 
 (require 'use-package)
+;(require 'quelpa-use-package)
 
 ;; NOTE: Not needed in emacs27
 ;(package-initialize)
@@ -166,9 +167,30 @@
          ("C-c o l" . org-store-link)))
 
 (use-package helm
+  :defer t
+  :commands (helm-git-grep)
   :config
   (set-face-attribute 'helm-source-header nil :height 0.85)
   )
+
+(use-package company
+  :init
+  (setq company-tooltip-align-annotations t)
+  :bind (:map company-active-map
+              ("C-n" . company-select-next)
+              ("C-p" . company-select-previous)))
+
+(use-package ibuffer
+  :init
+  (setq ibuffer-formats
+        '((mark modified read-only vc-status-mini " "
+                (name 18 18 :left :elide) " "
+                (size 9 -1 :right) " "
+                (mode 16 16 :left :elide) " "
+                (vc-status 16 16 :left) " "
+                vc-relative-file)))
+  :config
+  (use-package ibuffer-vc))
 
 ;(use-package moccur-edit)
 
@@ -203,8 +225,10 @@
 (mouse-avoidance-mode 'none)
 (blink-cursor-mode 0)
 (set-cursor-color "red3")
+(setq x-stretch-cursor t)
 
 (tooltip-mode -1)
+;; Default value for show-help-function=tooltip-show-help-non-mode
 (setq show-help-function nil)
 
 (setq dabbrev-ignored-buffer-names
@@ -229,7 +253,9 @@ bottom of the buffer stack."
 (define-key global-map (kbd "C-x C-l") 'switch-to-other-buffer)
 (require 'comint)
 (define-key comint-mode-map (kbd "C-M-l") nil)
-(define-key comint-mode-map (kbd "C-c C-s") nil)
+
+;(define-key term-mode-map (kbd "C-M-l") nil)
+;(define-key py-shell-map (kbd "C-M-l") nil)
 
 ;;; Uso ido to switch buffers and open files
 (setq ido-max-window-height 1)
@@ -256,6 +282,7 @@ bottom of the buffer stack."
 (autoload 'goto-last-change "goto-last-change"
   "Set point to the position of the last change." t)
 (global-set-key (kbd "C-c C-/") 'goto-last-change)
+(global-set-key (kbd "C-c C-l") 'goto-last-change)
 
 (global-undo-tree-mode)
 
@@ -508,8 +535,9 @@ If prefix ARG is specified, switch in other window."
   (funcall (if arg 'switch-to-buffer-other-window 'switch-to-buffer)
            (find-file-noselect lg-scratch-file)))
 
-(defun lg-install-switch-to-scratch ()
-  (local-set-key (kbd "C-c C-s") nil))
+(define-key global-map (kbd "M-<f3>") 'lg-switch-to-scratch)
+(define-key global-map (kbd "C-<f3>") 'lg-switch-to-scratch)
+(define-key global-map (kbd "C-c s") 'lg-switch-to-scratch)
 
 (setq initial-major-mode 'lisp-interaction-mode)
 (push '("\\*scratch-file\\*$" . lisp-interaction-mode) auto-mode-alist)
@@ -540,10 +568,6 @@ If used with prefix ARG, force Emacs to exit, skiping `kill-emacs-hook'."
     (when (yes-or-no-p "Exit Emacs?")
       (lg-save-lsf-buffer)
       (save-buffers-kill-emacs))))
-
-(define-key global-map (kbd "M-<f3>") 'lg-switch-to-scratch)
-(define-key global-map (kbd "C-<f3>") 'lg-switch-to-scratch)
-(define-key global-map (kbd "C-c C-s") 'lg-switch-to-scratch)
 
 (electric-indent-mode -1)
 
@@ -798,6 +822,8 @@ CSTR can contain special escape sequences:
 (advice-add 'vc-deduce-fileset :around #'lg-git-status-vc-deduce-fileset)
 
 ;; Paste to gist
+(require 'gist)
+
 (defvar lg-gist-description nil
   "Description for the gist currently importing.
 Bind it to change the description.")
@@ -977,7 +1003,7 @@ M-{ causes next skeleton insertation.
   (hl-line-mode 1))
 
 ;;; Use highline in several major modes by default
-(add-hook 'ibuffer-hooks 'highline-local-on)
+(add-hook 'ibuffer-hook 'highline-local-on)
 (add-hook 'cvs-mode-hook 'highline-local-on)
 
 ;;}}}
@@ -1032,6 +1058,30 @@ M-{ causes next skeleton insertation.
 ;;}}}
 
 ;;{{{ `-- Emacs lisp mode
+
+;;; Parenface begin
+;;; Taken from <X-URL:http://www.davep.org/emacs/parenface.el>
+(defvar paren-face 'paren-face)
+
+(defface paren-face
+    '((((class color))
+       (:foreground "DimGray")))
+  "Face for displaying a paren."
+  :group 'faces)
+
+(defmacro paren-face-add-support (keywords)
+  "Generate a lambda expression for use in a hook."
+  `(lambda ()
+    (let* ((regexp "(\\|)")
+           (match (assoc regexp ,keywords)))
+      (unless (eq (cdr match) paren-face)
+        (setq ,keywords (append (list (cons regexp paren-face)) ,keywords))))))
+
+(add-hook 'scheme-mode-hook (paren-face-add-support scheme-font-lock-keywords-2))
+(add-hook 'lisp-mode-hook (paren-face-add-support lisp-font-lock-keywords-2))
+(add-hook 'emacs-lisp-mode-hook (paren-face-add-support lisp-font-lock-keywords-2))
+(add-hook 'lisp-interaction-mode-hook (paren-face-add-support lisp-font-lock-keywords-2))
+;;; Parenface ends
 
 (defun lg-emacs-lisp-mode-customize ()
   (local-set-key (kbd "C-c c c") 'byte-compile-file)
@@ -1161,7 +1211,7 @@ If prefix ARG is given then insert result into the current buffer."
 (define-key global-map (kbd "C-c r s") 're-search-forward)
 (define-key global-map (kbd "C-c r r") 're-search-backward)
 (define-key global-map (kbd "C-c r e") 'query-replace-regexp)
-(define-key global-map (kbd "C-c r g") 'lg-grep-maybe-git)
+(define-key global-map (kbd "C-c r g") 'lg-grep)
 (define-key global-map (kbd "C-c r o") 'occur)
 
 ;; C-cm Prefix for MISC commands
@@ -1267,7 +1317,7 @@ If prefix ARG is given then insert result into the current buffer."
           #b11111111))
 
 (setq elpy-modules '(elpy-module-sane-defaults
-;                     elpy-module-company
+                     elpy-module-company
                      elpy-module-eldoc
                      elpy-module-flymake
                      elpy-module-pyvenv))
@@ -1280,14 +1330,9 @@ If prefix ARG is given then insert result into the current buffer."
   (local-set-key (kbd "C-c e s") 'py-execute-string)
   (local-set-key (kbd "C-c C-c") 'py-comment-region)
   (local-set-key (kbd "C-j") 'lg-insert-nl-at-eol)
-
-  (local-set-key (kbd "C-c C-s") nil)
-  (define-key elpy-mode-map (kbd "C-c C-s") nil)
   )
 
 (add-hook 'python-mode-hook 'lg-py-install-keys)
-
-(define-key py-shell-map (kbd "M-C-l") 'switch-to-other-buffer)
 
 ;;; Cython mode
 (require 'cython-mode)
@@ -1858,8 +1903,6 @@ auto-insert-alist)
   (local-set-key (kbd "C-c C-h") 'ff-find-related-file)
 
   (local-set-key (kbd "C-c c") nil)
-  (local-set-key (kbd "C-c C-s") nil)
-
   (local-set-key (kbd "C-c c c") 'lg-compile)
   (local-set-key (kbd "C-c c t") 'lg-compile-ctest-target)
   )
@@ -1993,10 +2036,6 @@ auto-insert-alist)
   )
 
 (add-hook 'diff-mode-hook 'lg-diff-install-keys)
-
-;;; Sh-mode
-
-(add-hook 'sh-mode-hook 'lg-install-switch-to-scratch)
 
 ;;; Visible vertical line
 (setq fci-rule-column 80
@@ -2140,6 +2179,10 @@ Save only if previously it was loaded or called interactively."
 ;;}}}
 
 ;;{{{ `-- Telega (telegram client)
+
+;; avoid weird space look
+(setq nobreak-char-display nil)         ;nbsp U+00A0
+
 (push "~/github/telega.el" load-path)
 
 ;; c-mode for autogenerated .tl files
@@ -2166,6 +2209,11 @@ Save only if previously it was loaded or called interactively."
 
 (setq telega-symbol-eliding "…")
 
+(defun lg-telega-chat-update (chat)
+  (with-telega-root-buffer
+    (hl-line-highlight)))
+
+(add-hook 'telega-chat-update-hook 'lg-telega-chat-update)
 
 (defun lg-telega-root-mode ()
   (hl-line-mode 1 ))
@@ -2176,9 +2224,15 @@ Save only if previously it was loaded or called interactively."
 (autoload 'telega-company-username "telega-company" "username backend" t)
 
 (defun lg-telega-chat-mode ()
-  (setq company-backends
-        (list 'telega-company-emoji 'telega-company-username))
+  (set (make-local-variable 'company-backends)
+       '(telega-company-emoji telega-company-username))
   (company-mode 1))
+
+(add-hook 'telega-chat-mode-hook
+          (lambda ()
+            (set (make-local-variable 'company-backends)
+                 '(telega-company-emoji telega-company-username))
+            (company-mode 1)))
 
 (add-hook 'telega-chat-mode-hook 'lg-telega-chat-mode)
 
@@ -2187,9 +2241,12 @@ Save only if previously it was loaded or called interactively."
   (telega-symbol-set-width telega-symbol-eliding 2)
   (telega-symbol-set-width "∏" 2)
   (telega-symbol-set-width "∑" 2)
+  (telega-symbol-set-width (cons 127344 127384) 2)
 
   (set-face-attribute 'telega-entity-type-pre nil :height 0.85)
   (set-face-attribute 'telega-entity-type-code nil :height 0.85)
+
+  (telega-mode-line-mode 1)
   )
 
 (add-hook 'telega-load-hook 'lg-telega-load)
@@ -2238,6 +2295,10 @@ Or run `call-last-kbd-macro' otherwise."
 (define-key global-map (kbd "C-x e") 'lg-end-and-call-macro)
 
 ;;}}}
+
+;; favorite unicode chars
+(define-key global-map (kbd "C-x 8 0") (kbd "°"))
+(define-key global-map (kbd "C-x 8 r") (kbd "₽"))
 
 ;; Backing up in single directory
 (setq backup-directory-alist
