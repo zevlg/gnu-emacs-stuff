@@ -176,6 +176,7 @@
 (use-package company
   :init
   (setq company-tooltip-align-annotations t)
+  (setq company-idle-delay 0.1)
   :bind (:map company-active-map
               ("C-n" . company-select-next)
               ("C-p" . company-select-previous)))
@@ -2225,20 +2226,17 @@ Save only if previously it was loaded or called interactively."
 
 (defun lg-telega-chat-mode ()
   (set (make-local-variable 'company-backends)
-       '(telega-company-emoji telega-company-username))
+       (append '(telega-company-emoji telega-company-username telega-company-hashtag)
+               (when (telega-chat-bot-p telega-chatbuf--chat)
+                 '(telega-company-botcmd))))
   (company-mode 1))
-
-(add-hook 'telega-chat-mode-hook
-          (lambda ()
-            (set (make-local-variable 'company-backends)
-                 '(telega-company-emoji telega-company-username))
-            (company-mode 1)))
 
 (add-hook 'telega-chat-mode-hook 'lg-telega-chat-mode)
 
 (defun lg-telega-load ()
   ;; Install custom symbols widths
   (telega-symbol-set-width telega-symbol-eliding 2)
+  (telega-symbol-set-width "♥" 2)
   (telega-symbol-set-width "∏" 2)
   (telega-symbol-set-width "∑" 2)
   (telega-symbol-set-width (cons 127344 127384) 2)
