@@ -22,7 +22,7 @@
  ;; Your init file should contain only one such instance.
  ;; If there is more than one, they won't work right.
  )
-(put 'timer-list 'disabled nil)
+(put 'list-timers 'disabled nil)
 
 
 ;; On new host do
@@ -2206,7 +2206,7 @@ Save only if previously it was loaded or called interactively."
 (setq telega-use-tracking t)
 
 (setq telega-root-fill-column 80)
-;(setq telega-chat-fill-column 70)
+(setq telega-chat-fill-column 80)
 
 (setq telega-symbol-eliding "…")
 
@@ -2214,15 +2214,16 @@ Save only if previously it was loaded or called interactively."
   (with-telega-root-buffer
     (hl-line-highlight)))
 
-(add-hook 'telega-chat-update-hook 'lg-telega-chat-update)
-
 (defun lg-telega-root-mode ()
   (hl-line-mode 1 ))
 
+(add-hook 'telega-chat-update-hook 'lg-telega-chat-update)
 (add-hook 'telega-root-mode-hook 'lg-telega-root-mode)
 
 (autoload 'telega-company-emoji "telega-company" "emoji backend" t)
 (autoload 'telega-company-username "telega-company" "username backend" t)
+(autoload 'telega-company-hashtag "telega-company" "hashtag backend" t)
+(autoload 'telega-company-botcmd "telega-company" "botcmd backend" t)
 
 (defun lg-telega-chat-mode ()
   (set (make-local-variable 'company-backends)
@@ -2322,4 +2323,3 @@ Or run `call-last-kbd-macro' otherwise."
 ;(lg-desktop-load)
 (message (format "+ %s loaded, M-x lg-desktop-load RET to load desktop" user-init-file))
 (lg-switch-to-scratch)
-(put 'list-timers 'disabled nil)
