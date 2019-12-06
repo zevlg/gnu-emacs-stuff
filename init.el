@@ -11,7 +11,7 @@
  '(custom-safe-themes
    '("fd236703d59b15f5fb5c8a109cdf102a7703da164231d199badcf05fe3467748" default))
  '(package-selected-packages
-   '(projectile tracking company-tabnine alert rainbow-identifiers page-break-lines quelpa-use-package package-lint pdf-tools evil go-scratch go-autocomplete go-complete go-eldoc go-mode ibuffer-git ibuffer-vc emms emoji-cheat-sheet-plus helm-git-grep helm helm-company helm-directory helm-exwm helm-git-files org-jira goto-last-change keycast use-package company-lsp lsp-clangd lsp-mode lsp-python lsp-rust lsp-ui flycheck flycheck-cython flycheck-pycheckers elpygen magit "company" company-emoji emojify sound-wav visual-fill-column pabbrev stripe-buffer all-the-icons travis wande rlust markdown-mode gitter scad-mode scad-preview nhexl-mode rust-mode cython-mode gh smartparens lua-mode highlight-current-line ein gitlab ponylang-mode pycoverage wolfram circe gist yaml-mode smart-compile rudel folding origami git-gutter-fringe+ google-translate cmake-project coverlay irony-eldoc fill-column-indicator rtags auto-complete-clang disaster haskell-mode autopair nim-mode irony cmake-mode git-gutter dash auctex undo-tree elpy))
+   '(jabber projectile tracking company-tabnine alert rainbow-identifiers page-break-lines quelpa-use-package package-lint pdf-tools evil go-scratch go-autocomplete go-complete go-eldoc go-mode ibuffer-git ibuffer-vc emms emoji-cheat-sheet-plus helm-git-grep helm helm-company helm-directory helm-exwm helm-git-files org-jira goto-last-change keycast use-package company-lsp lsp-clangd lsp-mode lsp-python lsp-rust lsp-ui flycheck flycheck-cython flycheck-pycheckers elpygen magit "company" company-emoji emojify sound-wav visual-fill-column pabbrev stripe-buffer all-the-icons travis wande rlust markdown-mode gitter scad-mode scad-preview nhexl-mode rust-mode cython-mode gh smartparens lua-mode highlight-current-line ein gitlab ponylang-mode pycoverage wolfram circe gist yaml-mode smart-compile rudel folding origami git-gutter-fringe+ google-translate cmake-project coverlay irony-eldoc fill-column-indicator rtags auto-complete-clang disaster haskell-mode autopair nim-mode irony cmake-mode git-gutter dash auctex undo-tree elpy))
  '(safe-local-variable-values
    '((projectile-project-run-cmd . "mkdir -p build; cd build; cmake ..; make run")
      (projectile-project-compilation-cmd . "mkdir -p build; cd build; cmake ..; make")))
@@ -802,6 +802,12 @@ CSTR can contain special escape sequences:
         (grep-find-ignored-files nil))
     (lgrep regexp files-glob default-directory nil)))
 
+(defun lg-copy-buffer-name ()
+  "Copy current buffer filename into kill-ring."
+  (interactive)
+  (kill-new (buffer-file-name))
+  (message "Copied: %s" (buffer-file-name)))
+
 ;;}}}
 
 ;;{{{ `-- Git
@@ -847,6 +853,14 @@ If prefix ARG is specified - create public gist."
   ;; GNU Emacs keeps region active after evaluation, so force
   ;; deactivation
   (deactivate-mark))
+
+(defun lg-gist-open-notes ()
+  "Open gist with my NOTES.org file."
+  (interactive)
+  (let ((buffer (get-buffer (format "*gist-%s*/NOTES.org" lg-gist-notes-id))))
+    (if buffer
+        (pop-to-buffer buffer)
+      (gist-fetch lg-gist-notes-id))))
 
 (defun lg-buffer-file-git-p (&optional buffer)
   "Return non-nil if BUFFER's file is tracked in git."
@@ -1270,6 +1284,7 @@ If prefix ARG is given then insert result into the current buffer."
 (define-key global-map (kbd "C-c c m") 'count-matches)
 
 (define-key global-map (kbd "C-c c t") 'lg-compile-ctest-target)
+(define-key global-map (kbd "C-c c b") 'lg-copy-buffer-name)
 
 ;;}}}
 
@@ -1287,6 +1302,7 @@ If prefix ARG is given then insert result into the current buffer."
 
 (define-key global-map (kbd "C-c g r") 'lg-gist-region)
 (define-key global-map (kbd "C-c g l") 'gist-list)
+(define-key global-map (kbd "C-c g n") 'lg-gist-open-notes)
 
 ;;}}}
 
@@ -1322,6 +1338,10 @@ If prefix ARG is given then insert result into the current buffer."
                      elpy-module-eldoc
                      elpy-module-flymake
                      elpy-module-pyvenv))
+
+;; See https://github.com/jorgenschaefer/elpy/issues/1381
+(setq elpy-eldoc-show-current-function nil)
+
 (elpy-enable)
 
 (defun lg-py-install-keys ()
@@ -2192,14 +2212,6 @@ Save only if previously it was loaded or called interactively."
 
 (autoload 'telega "telega" "Telegram client" t)
 
-(defun lg-telega-saved-messages ()
-  "Switch to SavedMessages buffer."
-  (interactive)
-  (telega-chat--pop-to-buffer (telega-chat-me)))
-
-(define-key global-map (kbd "C-c C-t") 'lg-telega-saved-messages)
-(define-key global-map (kbd "C-c t") 'telega)
-
 (setq telega-debug t)
 (setq telega-filter-custom-expand t)
 (setq telega-voip-use-sounds t)
@@ -2221,13 +2233,17 @@ Save only if previously it was loaded or called interactively."
 (add-hook 'telega-root-mode-hook 'lg-telega-root-mode)
 
 (autoload 'telega-company-emoji "telega-company" "emoji backend" t)
+(autoload 'telega-company-telegram-emoji "telega-company" "emoji backend" t)
 (autoload 'telega-company-username "telega-company" "username backend" t)
 (autoload 'telega-company-hashtag "telega-company" "hashtag backend" t)
 (autoload 'telega-company-botcmd "telega-company" "botcmd backend" t)
 
+(setq telega-emoji-company-backend 'telega-company-telegram-emoji)
+
 (defun lg-telega-chat-mode ()
   (set (make-local-variable 'company-backends)
-       (append '(telega-company-emoji telega-company-username telega-company-hashtag)
+       (append (list telega-emoji-company-backend
+                     'telega-company-username 'telega-company-hashtag)
                (when (telega-chat-bot-p telega-chatbuf--chat)
                  '(telega-company-botcmd))))
   (company-mode 1))
@@ -2235,6 +2251,9 @@ Save only if previously it was loaded or called interactively."
 (add-hook 'telega-chat-mode-hook 'lg-telega-chat-mode)
 
 (defun lg-telega-load ()
+  (push "@fmusbot" telega-known-inline-bots)
+  (define-key global-map (kbd "C-c t") telega-prefix-map)
+
   ;; Install custom symbols widths
   (telega-symbol-set-width telega-symbol-eliding 2)
   (telega-symbol-set-width "♥" 2)
