@@ -11,7 +11,7 @@
  '(custom-safe-themes
    '("fd236703d59b15f5fb5c8a109cdf102a7703da164231d199badcf05fe3467748" default))
  '(package-selected-packages
-   '(jabber projectile tracking company-tabnine alert rainbow-identifiers page-break-lines quelpa-use-package package-lint pdf-tools evil go-scratch go-autocomplete go-complete go-eldoc go-mode ibuffer-git ibuffer-vc emms emoji-cheat-sheet-plus helm-git-grep helm helm-company helm-directory helm-exwm helm-git-files org-jira goto-last-change keycast use-package company-lsp lsp-clangd lsp-mode lsp-python lsp-rust lsp-ui flycheck flycheck-cython flycheck-pycheckers elpygen magit "company" company-emoji emojify sound-wav visual-fill-column pabbrev stripe-buffer all-the-icons travis wande rlust markdown-mode gitter scad-mode scad-preview nhexl-mode rust-mode cython-mode gh smartparens lua-mode highlight-current-line ein gitlab ponylang-mode pycoverage wolfram circe gist yaml-mode smart-compile rudel folding origami git-gutter-fringe+ google-translate cmake-project coverlay irony-eldoc fill-column-indicator rtags auto-complete-clang disaster haskell-mode autopair nim-mode irony cmake-mode git-gutter dash auctex undo-tree elpy))
+   '(el2org jabber projectile tracking company-tabnine alert rainbow-identifiers page-break-lines quelpa-use-package package-lint pdf-tools evil go-scratch go-autocomplete go-complete go-eldoc go-mode ibuffer-git ibuffer-vc emms emoji-cheat-sheet-plus helm-git-grep helm helm-company helm-directory helm-exwm helm-git-files org-jira goto-last-change keycast use-package company-lsp lsp-clangd lsp-mode lsp-python lsp-rust lsp-ui flycheck flycheck-cython flycheck-pycheckers elpygen magit "company" company-emoji emojify sound-wav visual-fill-column pabbrev stripe-buffer all-the-icons travis wande rlust markdown-mode gitter scad-mode scad-preview nhexl-mode rust-mode cython-mode gh smartparens lua-mode highlight-current-line ein gitlab ponylang-mode pycoverage wolfram circe gist yaml-mode smart-compile rudel folding origami git-gutter-fringe+ google-translate cmake-project coverlay irony-eldoc fill-column-indicator rtags auto-complete-clang disaster haskell-mode autopair nim-mode irony cmake-mode git-gutter dash auctex undo-tree elpy))
  '(safe-local-variable-values
    '((projectile-project-run-cmd . "mkdir -p build; cd build; cmake ..; make run")
      (projectile-project-compilation-cmd . "mkdir -p build; cd build; cmake ..; make")))
@@ -1164,6 +1164,7 @@ If prefix ARG is specified, then replace region with the evaluation result."
 ;;{{{ `-- Editing commands
 
 (setq python-shell-interpreter "python3")
+(setq py-shell-name "python3")
 (setq python-shell-buffer-name "Python3")
 
 ;; shutup "Shell native completion is enabled."
@@ -1298,11 +1299,34 @@ If prefix ARG is given then insert result into the current buffer."
 (define-key global-map (kbd "C-c g =") 'vc-diff)
 (define-key global-map (kbd "C-c g p") 'vc-push)
 (define-key global-map (kbd "C-c g u") 'vc-update)
-(define-key global-map (kbd "C-c g s") 'git-status)
 
 (define-key global-map (kbd "C-c g r") 'lg-gist-region)
-(define-key global-map (kbd "C-c g l") 'gist-list)
 (define-key global-map (kbd "C-c g n") 'lg-gist-open-notes)
+
+;; Magit
+(define-key global-map (kbd "C-c g s") 'magit-status)
+(define-key global-map (kbd "C-c g l") 'magit-list-repositories)
+
+;; NOTE: problems with commit buffers
+(defun lg-magit-display-func (buffer)
+  (display-buffer buffer '(display-buffer-same-window)))
+  ;; (display-buffer
+  ;;  buffer (if (and (derived-mode-p 'magit-mode)
+  ;;                  (not (memq (with-current-buffer buffer major-mode)
+  ;;                             '(magit-process-mode
+  ;;                               magit-revision-mode
+  ;;                               magit-diff-mode
+  ;;                               magit-stash-mode))))
+  ;;             '(display-buffer-same-window)
+  ;;           nil)))
+
+(setq magit-display-buffer-function 'lg-magit-display-func)
+
+(defun lg-magit-status-install-keys ()
+  (define-key magit-status-mode-map (kbd "=") 'magit-diff-dwim)
+  )
+
+(add-hook 'magit-status-mode-hook 'lg-magit-status-install-keys)
 
 ;;}}}
 
@@ -2211,6 +2235,7 @@ Save only if previously it was loaded or called interactively."
 (add-to-list 'auto-mode-alist '("\\.tl\\'" . c-mode))
 
 (autoload 'telega "telega" "Telegram client" t)
+(define-key global-map (kbd "C-c t t") 'telega)
 
 (setq telega-debug t)
 (setq telega-filter-custom-expand t)
@@ -2221,6 +2246,7 @@ Save only if previously it was loaded or called interactively."
 (setq telega-chat-fill-column 80)
 
 (setq telega-symbol-eliding "…")
+(setq telega-chat-show-deleted-messages-for '(not saved-messages))
 
 (defun lg-telega-chat-update (chat)
   (with-telega-root-buffer
@@ -2238,7 +2264,7 @@ Save only if previously it was loaded or called interactively."
 (autoload 'telega-company-hashtag "telega-company" "hashtag backend" t)
 (autoload 'telega-company-botcmd "telega-company" "botcmd backend" t)
 
-(setq telega-emoji-company-backend 'telega-company-telegram-emoji)
+;(setq telega-emoji-company-backend 'telega-company-telegram-emoji)
 
 (defun lg-telega-chat-mode ()
   (set (make-local-variable 'company-backends)
@@ -2317,6 +2343,7 @@ Or run `call-last-kbd-macro' otherwise."
 ;; favorite unicode chars
 (define-key global-map (kbd "C-x 8 0") (kbd "°"))
 (define-key global-map (kbd "C-x 8 r") (kbd "₽"))
+(define-key global-map (kbd "C-x 8 e") (kbd "€"))
 
 ;; Backing up in single directory
 (setq backup-directory-alist
