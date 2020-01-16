@@ -1300,18 +1300,15 @@ If prefix ARG is given then insert result into the current buffer."
 (define-key global-map (kbd "C-c g s") 'magit-status)
 (define-key global-map (kbd "C-c g l") 'magit-list-repositories)
 
-;; NOTE: problems with commit buffers
 (defun lg-magit-display-func (buffer)
-  (display-buffer buffer '(display-buffer-same-window)))
-  ;; (display-buffer
-  ;;  buffer (if (and (derived-mode-p 'magit-mode)
-  ;;                  (not (memq (with-current-buffer buffer major-mode)
-  ;;                             '(magit-process-mode
-  ;;                               magit-revision-mode
-  ;;                               magit-diff-mode
-  ;;                               magit-stash-mode))))
-  ;;             '(display-buffer-same-window)
-  ;;           nil)))
+  (let ((buffer-major-mode (with-current-buffer buffer major-mode)))
+    ;; NOTE: status and diff from status display in same window
+    (if (or (eq buffer-major-mode 'magit-status-mode)
+            (and (eq major-mode 'magit-status-mode)
+                 (eq buffer-major-mode 'magit-diff-mode)))
+        (display-buffer buffer '(display-buffer-same-window))
+
+      (magit-display-buffer-traditional buffer))))
 
 (setq magit-display-buffer-function 'lg-magit-display-func)
 
