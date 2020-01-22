@@ -3,34 +3,16 @@
 ;; Copyright (C) 2015,2016 by Zajcev Evgeny
 ;;
 ;;;;
-(custom-set-variables
- ;; custom-set-variables was added by Custom.
- ;; If you edit it by hand, you could mess it up, so be careful.
- ;; Your init file should contain only one such instance.
- ;; If there is more than one, they won't work right.
- '(custom-safe-themes
-   '("fd236703d59b15f5fb5c8a109cdf102a7703da164231d199badcf05fe3467748" default))
- '(package-selected-packages
-   '(el2org jabber projectile tracking company-tabnine alert rainbow-identifiers page-break-lines quelpa-use-package package-lint pdf-tools evil go-scratch go-autocomplete go-complete go-eldoc go-mode ibuffer-git ibuffer-vc emms emoji-cheat-sheet-plus helm-git-grep helm helm-company helm-directory helm-exwm helm-git-files org-jira goto-last-change keycast use-package company-lsp lsp-clangd lsp-mode lsp-python lsp-rust lsp-ui flycheck flycheck-cython flycheck-pycheckers elpygen magit "company" company-emoji emojify sound-wav visual-fill-column pabbrev stripe-buffer all-the-icons travis wande rlust markdown-mode gitter scad-mode scad-preview nhexl-mode rust-mode cython-mode gh smartparens lua-mode highlight-current-line ein gitlab ponylang-mode pycoverage wolfram circe gist yaml-mode smart-compile rudel folding origami git-gutter-fringe+ google-translate cmake-project coverlay irony-eldoc fill-column-indicator rtags auto-complete-clang disaster haskell-mode autopair nim-mode irony cmake-mode git-gutter dash auctex undo-tree elpy))
- '(safe-local-variable-values
-   '((projectile-project-run-cmd . "mkdir -p build; cd build; cmake ..; make run")
-     (projectile-project-compilation-cmd . "mkdir -p build; cd build; cmake ..; make")))
- '(send-mail-function 'smtpmail-send-it))
-(custom-set-faces
- ;; custom-set-faces was added by Custom.
- ;; If you edit it by hand, you could mess it up, so be careful.
- ;; Your init file should contain only one such instance.
- ;; If there is more than one, they won't work right.
- )
-(put 'list-timers 'disabled nil)
-
+(setq custom-file (expand-file-name "~/.emacs.d/lisp/lg-custom.el"))
+(load custom-file)
 
 ;; On new host do
 ;;   M-x package-refresh-contents RET
 ;;   M-x package-install-selected-packages RET
 ;; after loading init.el fo the first time
 ;;
-(set-frame-height nil 28)
+(add-to-list 'default-frame-alist '(fullscreen . maximized))
+
 (require 'package)
 ;; (add-to-list 'package-archives
 ;;              '("elpy" . "https://jorgenschaefer.github.io/packages/"))
@@ -366,7 +348,7 @@ If ARG is non-nil delete region, otherwise kill."
     (delete-window (selected-window))
     (kill-buffer buffer)))
 
-(defun lg-kill-buffer-in-other-window (arg)
+(defun lg-kill-other-buffer-and-window (arg)
   "Kill buffer in other window.
 If prefix ARG is supplied, move point to other window."
   (interactive "P")
@@ -374,6 +356,7 @@ If prefix ARG is supplied, move point to other window."
   (when (> (count-windows) 1)
     (other-window 1)
     (kill-buffer (current-buffer))
+    (delete-window)
 
     (unless arg
       ;; Switch back
@@ -762,7 +745,8 @@ CSTR can contain special escape sequences:
 
 ;;{{{ `-- Server
 
-(server-start)
+(ignore-errors
+  (server-start))
 
 ;; Bold-ify/red-ify "Server"
 (let ((sspec (assq 'server-buffer-clients minor-mode-alist))
@@ -878,6 +862,12 @@ If prefix ARG is specified - create public gist."
   ;; deactivation
   (deactivate-mark))
 
+;; C-x C-s will notify when buffer is written
+(advice-add 'gist-mode-save-buffer :after
+            (lambda ()
+              "Notify when buffer is written."
+              (message "Wrote %s" (buffer-name))))
+
 (defun lg-gist-open-notes ()
   "Open gist with my NOTES.org file."
   (interactive)
@@ -908,6 +898,7 @@ Otherwise drop to `lg-grep'."
 
 (define-key global-map (kbd "C-o") nil)
 (define-key global-map (kbd "C-o 0") 'lg-kill-buffer-and-window)
+(define-key global-map (kbd "C-o k") 'lg-kill-other-buffer-and-window)
 (define-key global-map (kbd "C-o C-f") 'find-file-other-window)
 (define-key global-map (kbd "C-o v") 'find-variable-other-window)
 (define-key global-map (kbd "C-o f") 'find-function-other-window)
@@ -918,7 +909,6 @@ Otherwise drop to `lg-grep'."
 (define-key global-map (kbd "C-o d") 'dired-other-window)
 (define-key global-map (kbd "C-o C-o") 'iswitchb-display-buffer)
 (define-key global-map (kbd "C-o M-C-l") 'lg-switch-to-other-other-window)
-(define-key global-map (kbd "C-o k") 'lg-kill-buffer-in-other-window)
 
 ;;}}}
 
@@ -1123,6 +1113,7 @@ M-{ causes next skeleton insertation.
 ;;; Parenface ends
 
 (defun lg-emacs-lisp-mode-customize ()
+  (company-mode 1)
   (local-set-key (kbd "C-c c c") 'byte-compile-file)
   )
 
@@ -1285,6 +1276,8 @@ If prefix ARG is given then insert result into the current buffer."
 
 ;;{{{   `-- C-cl - Prefix for Listing commands
 
+(put 'list-timers 'disabled nil)
+
 (define-key global-map (kbd "C-c l a") 'list-abbrevs)
 (define-key global-map (kbd "C-c l b") 'list-bookmarks)
 (define-key global-map (kbd "C-c l h") 'list-command-history)
@@ -1332,18 +1325,15 @@ If prefix ARG is given then insert result into the current buffer."
 (define-key global-map (kbd "C-c g s") 'magit-status)
 (define-key global-map (kbd "C-c g l") 'magit-list-repositories)
 
-;; NOTE: problems with commit buffers
 (defun lg-magit-display-func (buffer)
-  (display-buffer buffer '(display-buffer-same-window)))
-  ;; (display-buffer
-  ;;  buffer (if (and (derived-mode-p 'magit-mode)
-  ;;                  (not (memq (with-current-buffer buffer major-mode)
-  ;;                             '(magit-process-mode
-  ;;                               magit-revision-mode
-  ;;                               magit-diff-mode
-  ;;                               magit-stash-mode))))
-  ;;             '(display-buffer-same-window)
-  ;;           nil)))
+  (let ((buffer-major-mode (with-current-buffer buffer major-mode)))
+    ;; NOTE: status and diff from status display in same window
+    (if (or (eq buffer-major-mode 'magit-status-mode)
+            (and (eq major-mode 'magit-status-mode)
+                 (eq buffer-major-mode 'magit-diff-mode)))
+        (display-buffer buffer '(display-buffer-same-window))
+
+      (magit-display-buffer-traditional buffer))))
 
 (setq magit-display-buffer-function 'lg-magit-display-func)
 
@@ -1359,7 +1349,7 @@ If prefix ARG is given then insert result into the current buffer."
 
 ;; Builtint `python-mode' is slow in emacs 25, so use this one
 ;; https://gitlab.com/python-mode-devs/python-mode.git
-(push "~/.emacs.d/thirdpart/python-mode" load-path)
+(push "~/.emacs.d/lisp/python-mode" load-path)
 (require 'python-mode)
 
 ;; make flymake marks more visible
@@ -1791,6 +1781,8 @@ auto-insert-alist)
 
 ;; Chromium browser by default
 (setq browse-url-browser-function 'browse-url-chromium)
+
+(autoload 'browse-url-url-at-point "browse-url")
 
 (defun lg-browse-url-at-point (&optional arg)
   (interactive "P")
@@ -2256,7 +2248,6 @@ Save only if previously it was loaded or called interactively."
 (push "~/github/telega.el" load-path)
 
 ;; c-mode for autogenerated .tl files
-(setq telega-debug t)
 (add-to-list 'auto-mode-alist '("\\.tl\\'" . c-mode))
 
 (autoload 'telega "telega" "Telegram client" t)
@@ -2267,10 +2258,13 @@ Save only if previously it was loaded or called interactively."
 (setq telega-voip-use-sounds t)
 (setq telega-use-tracking-for '(or unmuted mention))
 
+;; (setq telega-animation-play-inline t)
+;; (setq telega-video-note-play-inline t)
+;; (setq telega-video-play-inline t)
+
 (setq telega-root-fill-column 80)
 (setq telega-chat-fill-column 80)
 
-(setq telega-symbol-eliding "…")
 (setq telega-chat-show-deleted-messages-for '(not saved-messages))
 
 (defun lg-telega-chat-update (chat)
@@ -2278,7 +2272,7 @@ Save only if previously it was loaded or called interactively."
     (hl-line-highlight)))
 
 (defun lg-telega-root-mode ()
-  (hl-line-mode 1 ))
+  (hl-line-mode 1))
 
 (add-hook 'telega-chat-update-hook 'lg-telega-chat-update)
 (add-hook 'telega-root-mode-hook 'lg-telega-root-mode)
@@ -2297,25 +2291,40 @@ Save only if previously it was loaded or called interactively."
                      'telega-company-username 'telega-company-hashtag)
                (when (telega-chat-bot-p telega-chatbuf--chat)
                  '(telega-company-botcmd))))
-  (company-mode 1))
+  (company-mode 1)
+
+  ;; (make-face 'my-telega-face)
+  ;; (set-face-attribute 'my-telega-face nil :font "DejaVu Sans Mono")
+  ;; (setq buffer-face-mode-face 'my-telega-face)
+  ;; (buffer-face-mode)
+  )
 
 (add-hook 'telega-chat-mode-hook 'lg-telega-chat-mode)
 
 (defun lg-telega-load ()
+  (setq telega-chat-me-custom-title
+        (lambda (title)
+          (concat (propertize "🎗" 'face 'telega-blue)
+                  (propertize title 'face 'bold))))
+
   (push "@fmusbot" telega-known-inline-bots)
   (define-key global-map (kbd "C-c t") telega-prefix-map)
 
+  (telega-mode-line-mode 1)
+
+  (when (telega-x-frame)
+    (setq telega-symbol-eliding "…")
+    (telega-symbol-set-width telega-symbol-eliding 2))
+
   ;; Install custom symbols widths
-  (telega-symbol-set-width telega-symbol-eliding 2)
   (telega-symbol-set-width "♥" 2)
+  (telega-symbol-set-width "🎗" 2)
   (telega-symbol-set-width "∏" 2)
   (telega-symbol-set-width "∑" 2)
   (telega-symbol-set-width (cons 127344 127384) 2)
 
   (set-face-attribute 'telega-entity-type-pre nil :height 0.85)
   (set-face-attribute 'telega-entity-type-code nil :height 0.85)
-
-  (telega-mode-line-mode 1)
   )
 
 (add-hook 'telega-load-hook 'lg-telega-load)
