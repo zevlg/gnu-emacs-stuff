@@ -465,6 +465,30 @@ Use `C-u' prefix to select languages."
   (local-set-key (kbd "w") 'lg-google-translate)
   (forward-button 1))
 
+(defun lg-google-translate-inplace (start end)
+  "Inplace translator.
+If region is selected, then translate region.
+If no region, translate word at point."
+  (interactive (cond ((region-active-p)
+                      (list (region-beginning) (region-end)))
+                     ((bounds-of-thing-at-point 'word)
+                      (let ((word-bounds (bounds-of-thing-at-point 'word)))
+                        (list (car word-bounds) (cdr word-bounds))))
+                     (t (user-error "Nothing to translate inplace."))))
+
+  (let* ((reg-text (buffer-substring-no-properties start end))
+         (langs (google-translate-read-args nil nil))
+         (trans-text (google-translate-json-translation
+                      (google-translate-request "auto" (cadr langs) reg-text))))
+    (if (string-empty-p trans-text)
+        (user-error "No translation for: %s" reg-text)
+
+      (let ((saved-position (copy-marker (point) t)))
+        (goto-char end)
+        (insert trans-text)
+        (goto-char saved-position)
+        (delete-region start end)))))
+
 ;;}}}
 
 ;;{{{ `-- Different bindings
@@ -1254,6 +1278,7 @@ If prefix ARG is given then insert result into the current buffer."
 (define-key global-map (kbd "C-c d d") 'multitran)
 (define-key global-map (kbd "C-c d r") 'multitran)
 (define-key global-map (kbd "C-c d t") 'lg-google-translate)
+(define-key global-map (kbd "C-c d i") 'lg-google-translate-inplace)
 (define-key global-map (kbd "C-c d w") 'wolfram-alpha)
 
 ;;}}}
@@ -2240,7 +2265,7 @@ Save only if previously it was loaded or called interactively."
 (setq telega-debug t)
 (setq telega-filter-custom-expand t)
 (setq telega-voip-use-sounds t)
-(setq telega-use-tracking t)
+(setq telega-use-tracking-for '(or unmuted mention))
 
 (setq telega-root-fill-column 80)
 (setq telega-chat-fill-column 80)
