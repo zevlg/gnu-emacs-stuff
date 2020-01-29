@@ -1321,7 +1321,10 @@ If prefix ARG is given then insert result into the current buffer."
 (define-key global-map (kbd "C-c g r") 'lg-gist-region)
 (define-key global-map (kbd "C-c g n") 'lg-gist-open-notes)
 
-;; Magit
+;;; Magit
+(setq magit-uniquify-buffer-names nil)
+(setq magit-buffer-name-format "%x%M%v: %t%x")
+
 (define-key global-map (kbd "C-c g s") 'magit-status)
 (define-key global-map (kbd "C-c g l") 'magit-list-repositories)
 
@@ -1337,8 +1340,15 @@ If prefix ARG is given then insert result into the current buffer."
 
 (setq magit-display-buffer-function 'lg-magit-display-func)
 
+(defun lg-magit-diff-dwim (&optional args files)
+  "If has file at point, execute diff only for this file."
+  (interactive (magit-diff-arguments))
+  (if-let ((file (magit-file-at-point)))
+      (magit-diff-dwim args (list file))
+    (magit-diff-dwim args files)))
+
 (defun lg-magit-status-install-keys ()
-  (define-key magit-status-mode-map (kbd "=") 'magit-diff-dwim)
+  (define-key magit-status-mode-map (kbd "=") 'lg-magit-diff-dwim)
   )
 
 (add-hook 'magit-status-mode-hook 'lg-magit-status-install-keys)
