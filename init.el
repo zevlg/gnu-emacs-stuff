@@ -1268,6 +1268,9 @@ If prefix ARG is given then insert result into the current buffer."
 (define-key global-map (kbd "C-c m p") 'pabbrev-mode)
 
 ;; C-cd Prefix for DICT
+(push "~/github/grammarbot.el" load-path)
+(autoload 'grammarbot "grammarbot" "Check grammar with grammarbot." t)
+
 (define-key global-map (kbd "C-c d d") 'multitran)
 (define-key global-map (kbd "C-c d r") 'multitran)
 (define-key global-map (kbd "C-c d t") 'lg-google-translate)
