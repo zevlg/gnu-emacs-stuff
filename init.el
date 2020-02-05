@@ -313,6 +313,7 @@ bottom of the buffer stack."
 ;(set-face-background 'default "gray80")
 (set-face-background 'region "gray65")
 
+(setq fill-column 80)
 (setq scroll-error-top-bottom t)
 
 ;; Kill \n also if killing from the begining of line
@@ -417,8 +418,8 @@ If prefix ARG is supplied, move point to other window."
 
 (require 'google-translate)
 
-(setq google-translate-default-source-language "en"
-      google-translate-default-target-language "ru")
+(setq google-translate-default-source-language "auto"
+      google-translate-default-target-language nil)
 
 (defvar lg-google-translate-history nil "History for `read-string'.")
 
@@ -470,7 +471,8 @@ If no region, translate word at point."
         (goto-char end)
         (insert trans-text)
         (goto-char saved-position)
-        (delete-region start end)))))
+        (delete-region start end)
+        (message "Translated: %s" reg-text)))))
 
 ;;}}}
 
@@ -1270,6 +1272,7 @@ If prefix ARG is given then insert result into the current buffer."
 (define-key global-map (kbd "C-c d r") 'multitran)
 (define-key global-map (kbd "C-c d t") 'lg-google-translate)
 (define-key global-map (kbd "C-c d i") 'lg-google-translate-inplace)
+(define-key global-map (kbd "C-c d g") 'grammarbot)
 (define-key global-map (kbd "C-c d w") 'wolfram-alpha)
 
 ;;}}}
@@ -1335,13 +1338,16 @@ If prefix ARG is given then insert result into the current buffer."
 
       (magit-display-buffer-traditional buffer))))
 
-(setq magit-display-buffer-function 'lg-magit-display-func)
-
 (defun lg-magit-status-install-keys ()
   (define-key magit-status-mode-map (kbd "=") 'magit-diff-dwim)
   )
 
 (add-hook 'magit-status-mode-hook 'lg-magit-status-install-keys)
+
+
+(setq magit-display-buffer-function 'lg-magit-display-func)
+
+(setq magit-section-initial-visibility-alist '((untracked . hide)))
 
 ;;}}}
 
@@ -2371,6 +2377,24 @@ Or run `call-last-kbd-macro' otherwise."
 
 (define-key global-map (kbd "<f9>") 'lg-end-and-call-macro)
 (define-key global-map (kbd "C-x e") 'lg-end-and-call-macro)
+
+;;}}}
+
+;;{{{ `-- gif screencast
+(defun lg-xrectsel ()
+  "Select rectangle on screen."
+  (shell-command-to-string "xrectsel"))
+
+(setq gif-screencast-program "import")
+(setq gif-screencast-args nil)
+
+(defun lg-screencast (cap-geometry)
+  "Start recording gif screecast."
+  (interactive (list (lg-xrectsel)))
+
+  (setq gif-screencast-args
+  (let ((cap-geom (lg-xrectsel)))
+    )))
 
 ;;}}}
 
