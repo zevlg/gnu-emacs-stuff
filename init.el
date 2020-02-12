@@ -1282,6 +1282,7 @@ If prefix ARG is given then insert result into the current buffer."
 
 ;;{{{   `-- C-cl - Prefix for Listing commands
 
+(put 'list-threads 'disabled nil)
 (put 'list-timers 'disabled nil)
 
 (define-key global-map (kbd "C-c l a") 'list-abbrevs)
@@ -1292,6 +1293,7 @@ If prefix ARG is given then insert result into the current buffer."
 (define-key global-map (kbd "C-c l i") 'list-timers)
 (define-key global-map (kbd "C-c l m") 'list-matching-lines)
 (define-key global-map (kbd "C-c l t") 'describe-text-properties)
+(define-key global-map (kbd "C-c l T") 'list-threads)
 (define-key global-map (kbd "C-c l p") 'list-processes)
 (define-key global-map (kbd "C-c l s") 'strokes-list-strokes)
 (define-key global-map (kbd "C-c l .") 'list-tags)
@@ -2345,6 +2347,8 @@ Save only if previously it was loaded or called interactively."
   )
 
 (add-hook 'telega-load-hook 'lg-telega-load)
+(add-hook 'telega-load-hook 'global-telega-squash-message-mode)
+(add-hook 'telega-load-hook 'global-telega-url-shorten-mode)
 
 ;;}}}
 
@@ -2404,8 +2408,9 @@ Or run `call-last-kbd-macro' otherwise."
   (interactive (list (lg-xrectsel)))
 
   (setq gif-screencast-args
-  (let ((cap-geom (lg-xrectsel)))
-    )))
+        (list "-window" "root" "-crop" cap-geometry))
+  (gif-screencast)
+  )
 
 ;;}}}
 
