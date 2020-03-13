@@ -131,6 +131,9 @@
 (setq enable-recursive-minibuffers t)
 (setq select-enable-primary t)
 
+(setq max-specpdl-size 6400)
+(setq max-lisp-eval-depth 16000)
+
 ;;; Browse kill ring
 ;; git clone https://github.com/browse-kill-ring/browse-kill-ring.git
 ;; Installs `M-y' binding to run `browse-kill-ring' command.
@@ -876,7 +879,9 @@ If prefix ARG is specified - create public gist."
   (let ((buffer (get-buffer (format "*gist-%s*/NOTES.org" lg-gist-notes-id))))
     (if buffer
         (pop-to-buffer buffer)
-      (gist-fetch lg-gist-notes-id))))
+      (gist-fetch lg-gist-notes-id)
+      (goto-char (point-min)))
+    (delete-other-windows)))
 
 (defun lg-buffer-file-git-p (&optional buffer)
   "Return non-nil if BUFFER's file is tracked in git."
@@ -2286,6 +2291,10 @@ Save only if previously it was loaded or called interactively."
 
 (setq telega-chat-show-deleted-messages-for '(not saved-messages))
 
+;; Enlarged avatars for 2-lines view
+(setq telega-avatar-factors-alist '((1 . (0.8 . 0.1))
+                                    (2 . (0.8 . 0.1))))
+
 (defun lg-telega-chat-update (chat)
   (with-telega-root-buffer
     (hl-line-highlight)))
@@ -2333,6 +2342,8 @@ Save only if previously it was loaded or called interactively."
 
   (when (telega-x-frame)
     (setq telega-symbol-eliding "…")
+    (setq telega-symbol-underline-bar
+          (propertize " " 'face 'telega-webpage-strike-through))
     (telega-symbol-set-width telega-symbol-eliding 2))
 
   ;; Install custom symbols widths
