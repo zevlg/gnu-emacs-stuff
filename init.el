@@ -282,6 +282,9 @@ bottom of the buffer stack."
   (interactive)
   (mouse-yank-at-click nil nil))
 
+;; for slippery fingers pressing C-x C-c
+(setq confirm-kill-emacs 'yes-or-no-p)
+
 (defadvice save-buffers-kill-emacs (before lg-save-scratch-file activate)
   "Save scratch before exiting."
   (lg-save-lsf-buffer))
@@ -568,19 +571,6 @@ If prefix ARG is specified, switch in other window."
   (when (buffer-live-p lsf-buffer)
     (with-current-buffer lsf-buffer
       (save-buffer))))
-
-;; for slippery fingers
-(defun lg-ask-exit-emacs (arg)
-  "Ask for confirmation before exit.
-If used with prefix ARG, force Emacs to exit, skiping `kill-emacs-hook'."
-  (interactive "P")
-  (if arg
-      (let (kill-emacs-hook)
-        (kill-emacs))
-
-    (when (yes-or-no-p "Exit Emacs?")
-      (lg-save-lsf-buffer)
-      (save-buffers-kill-emacs))))
 
 (electric-indent-mode -1)
 
@@ -2338,7 +2328,7 @@ Save only if previously it was loaded or called interactively."
   (push "@fmusbot" telega-known-inline-bots)
   (define-key global-map (kbd "C-c t") telega-prefix-map)
 
-  (telega-mode-line-mode 1)
+;  (telega-mode-line-mode 1)
 
   (when (telega-x-frame)
     (setq telega-symbol-eliding "…")
@@ -2360,6 +2350,10 @@ Save only if previously it was loaded or called interactively."
 (add-hook 'telega-load-hook 'lg-telega-load)
 (add-hook 'telega-load-hook 'global-telega-squash-message-mode)
 (add-hook 'telega-load-hook 'global-telega-url-shorten-mode)
+
+(add-hook 'telega-load-hook 'telega-mode-line-mode)
+(add-hook 'telega-load-hook 'global-telega-url-shorten-mode)
+(add-hook 'telega-load-hook 'global-telega-squash-message-mode)
 
 ;;}}}
 
