@@ -2350,8 +2350,8 @@ Save only if previously it was loaded or called interactively."
   (telega-symbol-set-width "∑" 2)
   (telega-symbol-set-width (cons 127344 127384) 2)
 
-  (set-face-attribute 'telega-entity-type-pre nil :height 0.85)
-  (set-face-attribute 'telega-entity-type-code nil :height 0.85)
+  (set-face-attribute 'telega-entity-type-pre nil :height 0.82)
+  (set-face-attribute 'telega-entity-type-code nil :height 0.82)
   )
 
 (add-hook 'telega-load-hook 'lg-telega-load)
@@ -2364,10 +2364,13 @@ Save only if previously it was loaded or called interactively."
 (use-package vterm
   :load-path "~/dev/emacs-libvterm"
   :init
+  (setq vterm-shell "screen -DR")
+  (setq vterm-max-scrollback 0)
+
   (setq vterm-disable-underline t)
   (setq vterm-disable-inverse-video t)
   (setq vterm-keymap-exceptions
-        '("C-c" "C-x" "C-g" "C-h" "C-l" "M-x" "M-o" "C-v" "M-v" "C-y" "M-y"))
+        '("C-c" "C-x" "C-g" "C-h" "C-l" "M-x" "C-y" "M-y"))
   :commands (vterm)
   :config
   (set-face-foreground 'vterm-color-underline "yellow")
@@ -2375,6 +2378,7 @@ Save only if previously it was loaded or called interactively."
   (set-face-foreground 'vterm-color-default "green")
   (set-face-background 'vterm-color-default "black")
   (set-face-background 'vterm-color-black "gray20")
+  (set-face-background 'vterm-color-blue "DodgerBlue3")
   (set-face-foreground 'vterm-color-blue "royal blue")
   (add-hook 'vterm-mode-hook (lambda ()
                                (text-scale-decrease 2)))
@@ -2383,23 +2387,31 @@ Save only if previously it was loaded or called interactively."
          ("C-c C-x" . vterm-send-C-x)
          ("C-c M-x" . vterm-send-M-x)))
 
-(defun lg-switch-to-vterm (arg)
-  (interactive "P")
-  (if-let ((vterm-buf (get-buffer "vterm")))
-    (funcall (if arg
-                 #'switch-to-buffer-other-window
-               #'switch-to-buffer)
-             vterm-buf)
-    (vterm "vterm")))
+(defun lg-switch-to-vterm (arg &optional shell-cmd)
+  (interactive "p")
+  (let* ((bufname (concat "vterm" (number-to-string arg)))
+         (vterm-buf (get-buffer bufname)))
+    (if vterm-buf
+        (switch-to-buffer vterm-buf)
+
+      (let ((vterm-shell (or shell-cmd vterm-shell)))
+        (vterm bufname)))))
+
+(defun lg-switch-to-vterm2 ()
+  (interactive)
+  (lg-switch-to-vterm 2 "zsh"))
 
 (define-key global-map (kbd "C-c v") #'lg-switch-to-vterm)
+(define-key global-map (kbd "C-c V") #'lg-switch-to-vterm2)
 
 ;; Viewing asciinema with vterm
 (defun lg-asciinema-view (url &optional speed)
   (let ((vterm-shell (concat "asciinema play -s "
                              (number-to-string (or speed 2))
                              " " url)))
-    (vterm "asciinema")))
+    (vterm "asciinema")
+    (text-scale-decrease 4)
+    ))
 
 (defun lg-maybe-asciinema-view (origfunc url &optional in-web-browser)
   "Maybe open link to asciinema.org in vterm."
