@@ -2362,7 +2362,7 @@ Save only if previously it was loaded or called interactively."
 ;;{{{ `-- Vterm (telegram client)
 
 (use-package vterm
-  :load-path "~/github/emacs-libvterm"
+  :load-path "~/dev/emacs-libvterm"
   :init
   (setq vterm-disable-underline t)
   (setq vterm-disable-inverse-video t)
@@ -2411,6 +2411,21 @@ Save only if previously it was loaded or called interactively."
 (advice-add 'telega-browse-url :around 'lg-maybe-asciinema-view)
 
 ;;}}}
+;;{{{ `-- Misc modes customization
+
+;;; Gnuplot mode
+(use-package gnuplot
+  :init
+  (setq auto-mode-alist
+        (append '(("\\.gp$" . gnuplot-mode)) auto-mode-alist))
+  :bind (:map gnuplot-mode-map
+              ("C-c C-s" . gnuplot-show-gnuplot-buffer)
+              ("C-x C-e" . gnuplot-send-line-to-gnuplot)
+              ("C-c e r" . gnuplot-send-region-to-gnuplot)
+              ("C-c e b" . gnuplot-send-buffer-to-gnuplot)))
+
+;;}}}
+
 ;;{{{ `-- Editing tools
 
 ;;; Colorize modeline when defining macro
