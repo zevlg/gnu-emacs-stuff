@@ -2388,9 +2388,16 @@ Save only if previously it was loaded or called interactively."
   (set-face-foreground 'vterm-color-blue "royal blue")
   :bind (("C-<up>" . vterm--self-insert)
          ("C-<down>" . vterm--self-insert)
+         ("C-<SPC>" . lg-vterm-copy-mode-set-mark)
          ("C-c C-x" . vterm-send-C-x)
          ("C-c M-x" . vterm-send-M-x)))
 
+(defun lg-vterm-copy-mode-set-mark ()
+  "Enter vterm-copy-mode and set mark at point."
+  (interactive)
+  (vterm-copy-mode)
+  (set-mark-command nil))
+ 
 (defun lg-switch-to-vterm (arg &optional shell-cmd)
   (interactive "p")
   (let* ((bufname (concat "vterm" (number-to-string arg)))
