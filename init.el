@@ -554,9 +554,15 @@ If prefix ARG is specified, switch in other window."
   (funcall (if arg 'switch-to-buffer-other-window 'switch-to-buffer)
            (find-file-noselect lg-scratch-file)))
 
+(defun lg-switch-to-init-el (&optional arg)
+  (interactive "P")
+  (funcall (if arg 'switch-to-buffer-other-window 'switch-to-buffer)
+           (find-file-noselect (expand-file-name "~/.emacs.d/init.el"))))
+
 (define-key global-map (kbd "M-<f3>") 'lg-switch-to-scratch)
 (define-key global-map (kbd "C-<f3>") 'lg-switch-to-scratch)
 (define-key global-map (kbd "C-c s") 'lg-switch-to-scratch)
+(define-key global-map (kbd "C-c i") 'lg-switch-to-init-el)
 
 (setq initial-major-mode 'lisp-interaction-mode)
 (push '("\\*scratch-file\\*$" . lisp-interaction-mode) auto-mode-alist)
@@ -705,7 +711,7 @@ CSTR can contain special escape sequences:
 ;;{{{ `-- Scrolling
 
 (setq scroll-step 1)
-(setq scroll-preserve-screen-position t)
+(setq scroll-preserve-screen-position 'always)
 
 (define-key global-map (kbd "M-p") 'scroll-down-command)
 (define-key global-map (kbd "M-n") 'scroll-up-command)
@@ -1556,7 +1562,7 @@ If prefix ARG is given then insert result into the current buffer."
 
 (push '(("\\.el\\'" . "Emacs Lisp header")
         "Short description: "
-        ";;; " (file-name-nondirectory (buffer-file-name)) " --- " str "
+        ";;; " (file-name-nondirectory (buffer-file-name)) " --- " str "  -*- lexical-binding: t -*-
 
 ;; Copyright (C) "
         (substring (current-time-string) -4)
@@ -2281,7 +2287,7 @@ Save only if previously it was loaded or called interactively."
 ;; (setq telega-video-play-inline t)
 
 (setq telega-root-fill-column 80)
-(setq telega-chat-fill-column 80)
+(setq telega-chat-fill-column 70)
 
 (setq telega-chat-show-deleted-messages-for '(not saved-messages))
 
@@ -2380,8 +2386,6 @@ Save only if previously it was loaded or called interactively."
   (set-face-background 'vterm-color-black "gray20")
   (set-face-background 'vterm-color-blue "DodgerBlue3")
   (set-face-foreground 'vterm-color-blue "royal blue")
-  (add-hook 'vterm-mode-hook (lambda ()
-                               (text-scale-decrease 2)))
   :bind (("C-<up>" . vterm--self-insert)
          ("C-<down>" . vterm--self-insert)
          ("C-c C-x" . vterm-send-C-x)
@@ -2421,6 +2425,8 @@ Save only if previously it was loaded or called interactively."
     (funcall origfunc url in-web-browser)))
 
 (advice-add 'telega-browse-url :around 'lg-maybe-asciinema-view)
+
+;; Char-mode for vterm
 
 ;;}}}
 ;;{{{ `-- Misc modes customization
