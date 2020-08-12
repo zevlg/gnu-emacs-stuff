@@ -2174,14 +2174,22 @@ auto-insert-alist)
 
 ;;{{{ `-- Desktop
 
+;; Switch to scratch on startup, do it before loading `desktop',
+;; because it adds hook into `after-init-hook'
+(add-hook 'after-init-hook 'lg-switch-to-scratch)
+
 (require 'desktop)
 
 ;; Restoring frames does not work under EXWM
 (setq desktop-restore-frames nil)
+(setq desktop-restore-eager nil)        ; load fils lazily
 
 (push 'dired-mode desktop-modes-not-to-save)
 (push 'multran-mode desktop-modes-not-to-save)
-(push "worklog" desktop-clear-preserve-buffers)
+(push 'image-mode desktop-modes-not-to-save)
+(push 'telega-image-mode desktop-modes-not-to-save)
+(push 'telega-root-mode desktop-modes-not-to-save)
+(push 'telega-chat-mode desktop-modes-not-to-save)
 (setq desktop-buffers-not-to-save
       "\\(^nn\\.a[0-9]+\\|\\.log\\|(ftp)\\|^tags\\|^TAGS\\|^worklog\\)$")
 
@@ -2192,81 +2200,30 @@ auto-insert-alist)
 
         tags-file-name
         tags-table-list
-        search-ring
-        regexp-search-ring
         register-alist
-        file-name-history
-        minibuffer-history
-        read-expression-history
-        read-command-history
-        shell-command-history
+        (search-ring . 50)
+        (regexp-search-ring . 50)
+        (file-name-history . 50)
+        (minibuffer-history . 50)
+        (read-expression-history . 50)
+        (extended-command-history . 50)
+        (shell-command-history . 50)
 
         netcat-history
         multitran-read-history
 
         sudoku-custom-puzzles
         sudoku-solved-puzzles
-        command-history))
+        (command-history . 100)))
 
-;; Load the desktop
-(defvar lg-desktop-last "default")
-
-(defvar lg-desktops
-  '(("default" . ".desktop.default")
-    ("elisp" . ".desktop.elisp")
-    ("home" . ".desktop.home")
-    ("exwm" . ".desktop.exwm"))
-  "Alist of desktop files.")
-
-(defun lg-desktop-load (&optional name)
-  "Load previously saved desktop by NAME."
-  (interactive (list (completing-read
-                      "Desktop [default]: "
-                      (mapcar #'(lambda (el) (list (car el))) lg-desktops))))
-  ;; enable saving desktops if one is loaded
-  (desktop-save-mode 1)
-
-  (when (or (null name) (string= name ""))
-    (setq name "default"))
-  (let* ((desktop-base-file-name (cdr (assoc name lg-desktops)))
-         (desktop-base-lock-name (concat desktop-base-file-name ".lock"))
-         (default-directory (expand-file-name user-emacs-directory)))
-
-    (desktop-read user-emacs-directory)
-    (message (format "%s desktop loaded" name))))
-
-(defun lg-desktop-save (&optional name)
-  "Save the desktop to NAME.
-Save only if previously it was loaded or called interactively."
-  (interactive (list (completing-read
-                      (format "Desktop [%s]: " lg-desktop-last)
-                      (mapcar #'(lambda (el) (list (car el))) lg-desktops))))
-
-  (when (or desktop-save-mode (called-interactively-p 'any))
-    (when (or (null name) (string= name ""))
-      (setq name lg-desktop-last))
-
-    (let* ((desktop-base-file-name (cdr (assoc name lg-desktops)))
-           (desktop-base-lock-name (concat desktop-base-file-name ".lock")))
-      (desktop-save user-emacs-directory t)
-      (setq lg-desktop-last name))))
-
-(defun lg-desktop-setup ()
-  (mapc #'(lambda (v)
-            (desktop-truncate v 50))
-        (list search-ring regexp-search-ring minibuffer-history
-              shell-command-history command-history)))
-
-(remove-hook 'kill-emacs-hook 'desktop-kill) ; remove default desktop saver
-(add-hook 'kill-emacs-hook 'lg-desktop-save) ; save lg desktop on exit
-(add-hook 'kill-emacs-hook 'lg-desktop-setup)
+(desktop-save-mode 1)
 
 ;;}}}
 
 ;;{{{ `-- Telega (telegram client)
 
 ;; avoid weird space look
-(setq nobreak-char-display nil)         ;nbsp U+00A0
+;(setq nobreak-char-display nil)         ;nbsp U+00A0
 
 (push "~/github/telega.el" load-path)
 (push "~/github/telega.el/contrib" load-path)
@@ -2295,14 +2252,10 @@ Save only if previously it was loaded or called interactively."
 (setq telega-avatar-factors-alist '((1 . (0.8 . 0.1))
                                     (2 . (0.8 . 0.1))))
 
-(defun lg-telega-chat-update (chat)
-  (with-telega-root-buffer
-    (hl-line-highlight)))
-
 (defun lg-telega-root-mode ()
   (hl-line-mode 1))
 
-(add-hook 'telega-chat-update-hook 'lg-telega-chat-update)
+(add-hook 'telega-root-update-hook 'hl-line-highlight)
 (add-hook 'telega-root-mode-hook 'lg-telega-root-mode)
 
 (autoload 'telega-company-emoji "telega-company" "emoji backend" t)
@@ -2386,11 +2339,14 @@ Save only if previously it was loaded or called interactively."
   (set-face-background 'vterm-color-black "gray20")
   (set-face-background 'vterm-color-blue "DodgerBlue3")
   (set-face-foreground 'vterm-color-blue "royal blue")
-  :bind (("C-<up>" . vterm--self-insert)
-         ("C-<down>" . vterm--self-insert)
-         ("C-<SPC>" . lg-vterm-copy-mode-set-mark)
-         ("C-c C-x" . vterm-send-C-x)
-         ("C-c M-x" . vterm-send-M-x)))
+
+  (define-key vterm-mode-map (kbd "S-<prior>") 'vterm--self-insert)
+  (define-key vterm-mode-map (kbd "C-<up>") 'vterm--self-insert)
+  (define-key vterm-mode-map (kbd "S-<next>") 'vterm--self-insert)
+  (define-key vterm-mode-map (kbd "C-<down>") 'vterm--self-insert)
+  (define-key vterm-mode-map (kbd "C-<SPC>") 'lg-vterm-copy-mode-set-mark)
+  (define-key vterm-mode-map (kbd "C-c C-x") 'vterm-send-C-x)
+  (define-key vterm-mode-map (kbd "C-c M-x") 'vterm-send-M-x))
 
 (defun lg-vterm-copy-mode-set-mark ()
   "Enter vterm-copy-mode and set mark at point."
@@ -2437,6 +2393,9 @@ Save only if previously it was loaded or called interactively."
 
 ;;}}}
 ;;{{{ `-- Misc modes customization
+
+;; Convert "unknown" image formats with external converter
+(setq image-use-external-converter t)
 
 ;;; Gnuplot mode
 (use-package gnuplot
@@ -2537,8 +2496,3 @@ Or run `call-last-kbd-macro' otherwise."
     ;; Enable EXWM for non-tty emacs
     (when window-system
       (exwm-enable))))
-
-;; Load last desktop
-;(lg-desktop-load)
-(message (format "+ %s loaded, M-x lg-desktop-load RET to load desktop" user-init-file))
-(lg-switch-to-scratch)
