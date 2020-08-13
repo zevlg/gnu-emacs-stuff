@@ -552,7 +552,8 @@ Otherwise toggle."
 If prefix ARG is specified, switch in other window."
   (interactive "P")
   (funcall (if arg 'switch-to-buffer-other-window 'switch-to-buffer)
-           (find-file-noselect lg-scratch-file)))
+           (let ((coding-system-for-read 'utf-8))
+             (find-file-noselect lg-scratch-file))))
 
 (defun lg-switch-to-init-el (&optional arg)
   (interactive "P")
