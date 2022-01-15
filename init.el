@@ -11,6 +11,9 @@
 ;;   M-x package-install-selected-packages RET
 ;; after loading init.el fo the first time
 ;;
+(setq gc-cons-threshold (* 4 8388608))
+(setq-default garbage-collection-messages t)
+
 (add-to-list 'default-frame-alist '(fullscreen . maximized))
 
 (require 'package)
@@ -18,7 +21,13 @@
 ;;              '("elpy" . "https://jorgenschaefer.github.io/packages/"))
 
 (add-to-list 'package-archives
+             '("melpa-stable" . "https://stable.melpa.org/packages/"))
+(add-to-list 'package-archives
              '("melpa" . "https://melpa.org/packages/"))
+(add-to-list 'package-archives
+             '("org" . "http://orgmode.org/elpa/") t)
+
+(add-to-list 'package-pinned-packages '(telega . "melpa-stable"))
 
 (package-initialize)
 (require 'use-package)
@@ -96,6 +105,7 @@
  '(modeline-buffer-id ((t (:background "Gray80" :foreground "blue4"))))
  '(modeline-mousable ((t (:background "Gray80" :foreground "firebrick"))))
  '(modeline-mousable-minor-mode ((t (:background "Gray80" :foreground "green4"))))
+ '(parenthesis ((t (:foreground "gray60"))))
  '(paren-blink-off ((t (:foreground "gray80"))))
  '(paren-match ((t (:background "darkseagreen2"))))
  '(paren-mismatch ((t (:background "DeepPink" :foreground "black"))))
@@ -118,13 +128,23 @@
  '(zmacs-region ((t (:background "gray65"))))
  '(escape-glyph ((t (:weight bold :background "gold" :foreground "blue"
                              :box (:line-width -1 :color "black")))))
+
+ '(yascroll:thumb-fringe ((t :foreground "gray70" :background "gray70")))
+
+ ;; org-mode
+ '(org-indent ((t (:background "gray78" :foreground "gray78"))))
+ '(org-block ((t (:background "gray75" :family "FreeMono" :height 0.85))))
+ '(org-block-begin-line ((t (:background "gray75"))))
  )
 
 (enable-theme 'lg-xemacs-like)
 
 ;; See https://github.com/zevlg/RictyDiminishedL
-(set-face-attribute 'default nil :family "RictyDiminishedL")
-(set-face-attribute 'default nil :height 360)
+(set-face-attribute 'default nil :family "RictyDiminishedL" :height 360)
+
+;(set-face-attribute 'fixed-pitch nil :family "Victor Mono Light" :height 0.95)
+(set-face-attribute 'fixed-pitch nil :family "FreeMono" :height 0.85)
+(set-face-attribute 'fixed-pitch-serif nil :family "FreeMono" :height 0.85)
 
 ;; Dash is 2 columns width
 (set-char-table-range char-width-table '(?— . ?—) 2)
@@ -132,6 +152,8 @@
 (setq inhibit-splash-screen t)
 (setq enable-recursive-minibuffers t)
 (setq select-enable-primary t)
+;; Avoir queries for local variables
+(setq enable-local-variables nil)
 
 (setq max-specpdl-size 6400)
 (setq max-lisp-eval-depth 16000)
@@ -147,12 +169,60 @@
    :config
    (browse-kill-ring-default-keybindings))
 
+(defun lg-org-clock-toggle ()
+  "Call clock-in or clock-out according to the current clocking state."
+  (interactive)
+  (call-interactively (if (org-clocking-p) #'org-clock-out #'org-clock-in)))
+
 (use-package org
   :init
-  (setq org-log-done t)
+  (setq org-startup-indented t)
+  (setq org-indent-mode-turns-on-hiding-stars nil)
+  ;; Show links in open format
+  ; (setq org-link-descriptive nil)
+;  (setq org-adapt-indentation t)
+
+  (setq org-catch-invisible-edits t)
+  (setq org-log-done 'time)
+  (setq org-log-redeadline 'time)
+
+  (defun lg-org-return ()
+    "Open a link at point or insert newline."
+    (interactive)
+    (let ((faces (get-text-property (point) 'face)))
+      (if (or (when (listp faces)
+                (memq 'org-link faces))
+              (eq 'org-link faces))
+          (call-interactively 'org-open-at-point)
+        (call-interactively 'org-return))))
+
+  (defun lg-org-emphasize ()
+    (interactive)
+    (save-excursion
+      (call-interactively #'org-emphasize))
+    )
+  (add-hook 'org-mode-hook 'auto-fill-mode)
   :bind (("C-c o a" . org-agenda)
          ("C-c o l" . org-store-link)
-         ("C-c o c" . org-capture)))
+         ("C-c o y" . org-insert-last-stored-link)
+         ("C-c o c" . org-capture)
+         ("C-c o o" . org-open-at-point)
+         ("C-c o e" . org-export-dispatch)
+         ("C-c o r" . lg-org-emphasize)
+
+         ("C-c o n" . org-next-link)
+         ("C-c o p" . org-previous-link)
+         ("C-c o TAB" . org-next-link)
+         ("C-c o <backtab>" . org-previous-link)
+
+         :map org-mode-map
+         ("RET" . lg-org-return)
+         ;; clocking
+         ("C-c c c" . lg-org-clock-toggle)))
+
+(use-package org-bullets
+  :init
+  (add-hook 'org-mode-hook 'org-bullets-mode))
 
 (use-package helm
   :defer t
@@ -169,6 +239,16 @@
               ("C-n" . company-select-next)
               ("C-p" . company-select-previous)))
 
+(use-package company-posframe
+  :after company
+  :init
+  ;; no quickhelp popups please
+  (setq company-posframe-quickhelp-delay nil)
+  :config
+  ;; Do not enable it by default
+;  (company-posframe-mode 1)
+  )
+
 (use-package ibuffer
   :init
   (setq ibuffer-formats
@@ -180,6 +260,12 @@
                 vc-relative-file)))
   :config
   (use-package ibuffer-vc))
+
+(use-package page-break-lines
+  :init
+  (setq page-break-lines-char ?\x2001)
+  :config
+  (set-face-attribute 'page-break-lines nil :strike-through t))
 
 ;(use-package moccur-edit)
 
@@ -210,6 +296,10 @@
 
 (setq default-scroll-bar-width 6)
 (scroll-bar-mode -1)
+
+;; Disable mouse clicks
+(require 'disable-mouse)
+(global-disable-mouse-mode)
 
 (mouse-avoidance-mode 'none)
 (blink-cursor-mode 0)
@@ -243,19 +333,85 @@ bottom of the buffer stack."
 (require 'comint)
 (define-key comint-mode-map (kbd "C-M-l") nil)
 
+(defun lg-exchange-point-and-mark (arg)
+  "`exchange-point-and-mark' with inverse meaning for ARG."
+  (interactive "P")
+  (exchange-point-and-mark (not arg)))
+
+(define-key global-map (kbd "C-x C-x") 'lg-exchange-point-and-mark)
+
+;; C-M-h to mark S expressions
+(use-package lg-mark-sexp
+  :init
+  (defun lg-sexp-region (&optional pos)
+    "Return region for the sexp around the POS."
+    (let ((pnt (save-excursion
+                 (ignore-errors
+                   (when pos
+                     (goto-char pos))
+                   (cons (progn (up-list -1 t t) (point))
+                         (if (eq (char-after) ?\")
+                             ;; Mark following string
+                             (progn
+                               (forward-sexp)
+                               (point))
+                           (or (scan-lists (point) 1 0)
+                               (buffer-end 1))))))))
+      (when (and pnt (> (cdr pnt) (car pnt)))
+        pnt)))
+  (defun lg-mark-sexp (&optional n start-pos)
+    "Mark N expressions around the point."
+    (interactive "p")
+    (when (> n 0)
+      (when-let ((sexp-pos (lg-sexp-region)))
+        (goto-char (car sexp-pos))
+        (set-mark (cdr sexp-pos))
+        (lg-mark-sexp (- n 1)))))
+
+  :bind (("C-M-h" . lg-mark-sexp)
+         ))
+
 ;(define-key term-mode-map (kbd "C-M-l") nil)
 ;(define-key py-shell-map (kbd "C-M-l") nil)
 
-;;; Uso ido to switch buffers and open files
-(setq ido-max-window-height 1)
-;; Use `.' for dired
-(setq ido-show-dot-for-dired t)
-;; Disable confusing auto-merging
-(setq ido-auto-merge-work-directories-length -1)
-;; Enter directory on `/'
-(setq ido-enter-matching-directory 'first)
+;;; icomplete to mimic `ido' for completions
+;; RET forces first match
+(use-package icomplete
+  :init 
+  (setq icomplete-compute-delay 0.15)
+  (setq completion-show-help nil)
+  (setq icomplete-show-matches-on-no-input t)
+  (setq completion-styles '(basic partial-completion emacs22))
 
-(ido-mode 1)
+  (defun lg-icomplete-minibuffer-setup ()
+    (when (and icomplete-mode (icomplete-simple-completing-p))
+      (use-local-map (make-composed-keymap
+                      icomplete-fido-mode-map (current-local-map)))
+      ))
+  (add-hook 'icomplete-minibuffer-setup-hook 'lg-icomplete-minibuffer-setup)
+  :config
+  (icomplete-mode 1)
+  )
+
+;;; NOTE: fido mode is way too slow on large collections
+;; (ignore-errors
+;;   (fido-mode 1))
+
+;;; Use ido to switch buffers and open files
+(use-package ido
+  :init 
+  (setq ido-max-window-height 1)
+  ;; Use `.' for dired
+  (setq ido-show-dot-for-dired t)
+  ;; Disable confusing auto-merging
+  (setq ido-auto-merge-work-directories-length -1)
+  ;; Enter directory on `/'
+  (setq ido-enter-matching-directory 'first)
+
+  :config
+  ;; Ignore telega chat buffers
+  (add-to-list 'ido-ignore-buffers "\\`◀")
+  (ido-mode 1))
 
 ;; M-x package-install RET undo-tree RET
 ;;; git clone http://www.dr-qubit.org/git/undo-tree.git
@@ -293,36 +449,45 @@ bottom of the buffer stack."
   (lg-save-lsf-buffer))
 
 ;;; Paren mode
-(defun lg-show-paren-surround ()
-  (let ((pdflt (show-paren--default)))
-    (or pdflt
-        (let ((pnt (save-excursion
-                     (condition-case nil
-                         (cons (progn (up-list -1) (point))
-                               (or (scan-lists (point) 1 0)
-                                   (buffer-end 1)))
-                       (error nil)))))
-          (when (and pnt (> (cdr pnt) (car pnt)))
-            (list (car pnt) (cdr pnt) nil nil nil))))))
+(use-package paren
+  :config
+  (defun lg-show-paren-surround ()
+    (let ((pdflt (show-paren--default)))
+      (or pdflt
+          (let ((pnt (save-excursion
+                       (condition-case nil
+                           (cons (progn (up-list -1) (point))
+                                 (or (scan-lists (point) 1 0)
+                                     (buffer-end 1)))
+                         (error nil)))))
+            (when (and pnt (> (cdr pnt) (car pnt)))
+              (list (car pnt) (cdr pnt) nil nil nil))))))
 
-(setq show-paren-data-function #'lg-show-paren-surround)
+  (setq show-paren-data-function #'lg-show-paren-surround)
 
-;; NOTE: gray83 looks good on tty and X (with background=gray80)
-(set-face-background 'show-paren-match "gray90")
-(set-face-background 'show-paren-mismatch "#FFFF00")
-(set-face-foreground 'show-paren-mismatch nil)
+  ;; NOTE: gray83 looks good on tty and X (with background=gray80)
+  (set-face-background 'show-paren-match "gray83")
+  (set-face-background 'show-paren-mismatch "#FFFF00")
+  (set-face-foreground 'show-paren-mismatch nil)
 
-(setq show-paren-delay 0)
-;(setq show-paren-style 'expression)
-(setq show-paren-style 'parenthesis)
-(setq show-paren-priority -1000)
-;(show-paren-mode 1)
+  (setq show-paren-delay 0)
+  (setq show-paren-style 'expression)
+                                        ;(setq show-paren-style 'parenthesis)
+  (setq show-paren-when-point-in-periphery t)
+  (setq show-paren-when-point-inside-paren nil)
+  (setq show-paren-priority -1000)
+
+  (show-paren-mode -1)
+;  :hook (after-init-hook . show-paren-mode)
+  )
 
 ;;; Selected region
 ;(set-face-background 'default "gray80")
 (set-face-background 'region "gray65")
 
 (setq fill-column 80)
+(setq emacs-lisp-docstring-fill-column 70)
+
 (setq scroll-error-top-bottom t)
 
 ;; Kill \n also if killing from the begining of line
@@ -379,6 +544,8 @@ If prefix ARG is supplied, move point to other window."
 (define-key global-map (kbd "M-<f4>") 'lg-kill-current-buffer)
 (define-key global-map (kbd "C-x k") 'lg-kill-current-buffer)
 
+(define-key global-map (kbd "C-M-k") 'kill-sexp)
+
 ;; backward kill sexp
 (define-key global-map (kbd "C-M-<backspace>") (kbd "C-M-p C-M-k"))
 (define-key global-map (kbd "C-x M-<backspace>") (kbd "C-M-p C-M-k"))
@@ -399,6 +566,7 @@ If prefix ARG is supplied, move point to other window."
 ;; https://github.com/zevlg/multitran.el/
 ;; https://raw.githubusercontent.com/zevlg/emacs-stuff/master/wordfreq.el
 (push "~/github/multitran.el" load-path)
+(push "~/github/emacs-stuff" load-path)
 
 (autoload 'multitran "multitran" nil t)
 (autoload 'wordfreq-find "wordfreq" nil t)
@@ -568,14 +736,6 @@ If prefix ARG is specified, switch in other window."
 (setq initial-major-mode 'lisp-interaction-mode)
 (push '("\\*scratch-file\\*$" . lisp-interaction-mode) auto-mode-alist)
 
-;;; Create *scratch-file* and make it unkillable
-;(add-hook 'term-setup-hook (lambda () (kill-buffer "*scratch*")))
-(with-current-buffer
-    (setq lsf-buffer (find-file-noselect lg-scratch-file))
-  (font-lock-mode -1)
-  (kill-buffer "*scratch*")
-  (rename-buffer "*scratch*"))
-
 (defun lg-save-lsf-buffer ()
   "Save *scratch-file* buffer on exit."
   (when (buffer-live-p lsf-buffer)
@@ -586,11 +746,11 @@ If prefix ARG is specified, switch in other window."
 
 (defun lg-insert-nl-at-eol (arg)
   "Insert new line at the end of line.
-If prefix ARG is supplied, do not move point."
+If prefix ARG is supplied, insert newline at point."
   (interactive "P")
-  (eval (list (if arg 'save-excursion 'progn)
-              '(end-of-line)
-              '(newline-and-indent))))
+  (unless arg
+    (end-of-line))
+  (newline-and-indent))
 
 (define-key global-map (kbd "C-j") 'lg-insert-nl-at-eol)
 
@@ -714,6 +874,8 @@ CSTR can contain special escape sequences:
 (setq scroll-step 1)
 (setq scroll-preserve-screen-position 'always)
 
+(setq next-screen-context-lines 0)
+
 (define-key global-map (kbd "M-p") 'scroll-down-command)
 (define-key global-map (kbd "M-n") 'scroll-up-command)
 
@@ -722,7 +884,9 @@ CSTR can contain special escape sequences:
 ;;{{{ `-- Minibuffer
 
 (setq echo-keystrokes 0.1)
+(setq max-mini-window-height 0.5)
 (setq resize-mini-windows nil)
+(setq resize-mini-windows t)
 
 ;;}}}
 
@@ -766,6 +930,8 @@ CSTR can contain special escape sequences:
 
 ;; Do not ask about saving some files
 (setq grep-save-buffers nil)
+
+(setq grep-use-directories-skip nil)
 
 ;; Use previous search regex if default tag is not found
 (defun lg-find-tag-default ()
@@ -868,21 +1034,25 @@ If prefix ARG is specified - create public gist."
   (deactivate-mark))
 
 ;; C-x C-s will notify when buffer is written
-(advice-add 'gist-mode-save-buffer :after
-            (lambda ()
-              "Notify when buffer is written."
-              (message "Wrote %s" (buffer-name))))
+;; (advice-add 'gist-mode-save-buffer :after
+;;             (lambda ()
+;;               "Notify when buffer is written."
+;;               (message "Wrote %s" (buffer-name))))
 
-(defun lg-gist-open-notes ()
-  "Open gist with my NOTES.org file."
-  (interactive)
-  (let ((buffer (get-buffer (format "*gist-%s*/NOTES.org" lg-gist-notes-id))))
-    (if buffer
-        (pop-to-buffer buffer)
-      (gist-fetch lg-gist-notes-id)
-      (goto-char (point-min)))
-    (delete-other-windows)))
 
+(use-package gist-org
+  :load-path "~/github/gist-org.el"
+  :init
+  (defun lg-gist-open-index ()
+    "Open gist with my index.org file."
+    (interactive)
+    (gist-org-open lg-gist-index-id)) 
+
+  :config
+  (gist-org-mode-setup)
+ )
+
+
 (defun lg-buffer-file-git-p (&optional buffer)
   "Return non-nil if BUFFER's file is tracked in git."
   (vc-git-responsible-p (or (buffer-file-name buffer) default-directory)))
@@ -895,6 +1065,8 @@ Otherwise drop to `lg-grep'."
       (helm-git-grep-1 (grep-tag-default))
 ;      (call-interactively 'helm-git-grep)
     (call-interactively 'lg-grep)))
+
+(add-hook 'gist-list-mode-hook 'highline-local-on)
 
 ;;}}}
 
@@ -1003,6 +1175,8 @@ Otherwise drop to `lg-grep'."
 
 (define-key global-map (kbd "C-M-{") 'backward-paragraph)
 (define-key global-map (kbd "C-M-}") 'forward-paragraph)
+(define-key global-map (kbd "M-]") 'forward-paragraph)
+(define-key global-map (kbd "M-}") 'backward-paragraph)
 (define-key global-map (kbd "C-M-'") 'abbrev-prefix-mark)
 
 (define-key global-map (kbd "M-\"") 'lg-skeleton-pair-insert)
@@ -1070,9 +1244,9 @@ M-{ causes next skeleton insertation.
     (apply-macro-to-region-lines begin end dot-mode-cmd-buffer)
 
     ;; Put the hooks back
-    (make-local-hook 'pre-command-hook)
-    (make-local-hook 'post-command-hook)
-    (make-local-hook 'after-change-functions)
+    ;; (make-local-hook 'pre-command-hook)
+    ;; (make-local-hook 'post-command-hook)
+    ;; (make-local-hook 'after-change-functions)
     (add-hook 'pre-command-hook 'dot-mode-pre-hook nil t)
     (add-hook 'post-command-hook 'dot-mode-loop nil t)
     (add-hook 'after-change-functions 'dot-mode-after-change nil t)))
@@ -1095,35 +1269,18 @@ M-{ causes next skeleton insertation.
 
 ;;{{{ `-- Emacs lisp mode
 
-;;; Parenface begin
-;;; Taken from <X-URL:http://www.davep.org/emacs/parenface.el>
-(defvar paren-face 'paren-face)
-
-(defface paren-face
-    '((((class color))
-       (:foreground "DimGray")))
-  "Face for displaying a paren."
-  :group 'faces)
-
-(defmacro paren-face-add-support (keywords)
-  "Generate a lambda expression for use in a hook."
-  `(lambda ()
-    (let* ((regexp "(\\|)")
-           (match (assoc regexp ,keywords)))
-      (unless (eq (cdr match) paren-face)
-        (setq ,keywords (append (list (cons regexp paren-face)) ,keywords))))))
-
-(add-hook 'scheme-mode-hook (paren-face-add-support scheme-font-lock-keywords-2))
-(add-hook 'lisp-mode-hook (paren-face-add-support lisp-font-lock-keywords-2))
-(add-hook 'emacs-lisp-mode-hook (paren-face-add-support lisp-font-lock-keywords-2))
-(add-hook 'lisp-interaction-mode-hook (paren-face-add-support lisp-font-lock-keywords-2))
-;;; Parenface ends
+;;; Dim parens
+(use-package paren-face
+  :ensure t
+  :config
+  (global-paren-face-mode 1))
 
 (defun lg-emacs-lisp-mode-customize ()
   (company-mode 1)
   (local-set-key (kbd "C-c c c") 'byte-compile-file)
   )
 
+(add-hook 'emacs-lisp-mode-hook 'which-function-mode)
 (add-hook 'emacs-lisp-mode-hook 'lg-emacs-lisp-mode-customize)
 
 ;; Evaluate current-buffer
@@ -1276,6 +1433,17 @@ If prefix ARG is given then insert result into the current buffer."
 (push "~/github/grammarbot.el" load-path)
 (autoload 'grammarbot "grammarbot" "Check grammar with grammarbot." t)
 
+(defun lg-flyspell-region-or-buffer ()
+  "Flyspell region or buffer."
+  (interactive)
+  (if (region-active-p)
+      (progn
+        (call-interactively 'flyspell-region)
+        (deactivate-mark))
+    (flyspell-buffer)))
+
+(define-key global-map (kbd "C-c d c") 'lg-flyspell-region-or-buffer)
+(define-key global-map (kbd "C-c d f") 'lg-flyspell-region-or-buffer)
 (define-key global-map (kbd "C-c d d") 'multitran)
 (define-key global-map (kbd "C-c d r") 'multitran)
 (define-key global-map (kbd "C-c d t") 'lg-google-translate)
@@ -1318,6 +1486,9 @@ If prefix ARG is given then insert result into the current buffer."
 (define-key global-map (kbd "C-c c t") 'lg-compile-ctest-target)
 (define-key global-map (kbd "C-c c b") 'lg-copy-buffer-name)
 
+;; Also prefix for compilation
+(define-key global-map (kbd "C-c c C") 'compile)
+
 ;;}}}
 
 ;;{{{   `-- C-cg - Git commands
@@ -1332,14 +1503,25 @@ If prefix ARG is given then insert result into the current buffer."
 (define-key global-map (kbd "C-c g u") 'vc-update)
 
 (define-key global-map (kbd "C-c g r") 'lg-gist-region)
-(define-key global-map (kbd "C-c g n") 'lg-gist-open-notes)
+(define-key global-map (kbd "C-c g n") 'lg-gist-open-index)
+(define-key global-map (kbd "C-c g i") 'lg-gist-open-index)
+(define-key global-map (kbd "C-c g g") 'lg-gist-open-index)
+(define-key global-map (kbd "C-c g b") 'gist-org-buffer-switch)
+(define-key global-map (kbd "C-c g +") 'gist-org-file-create)
+(define-key global-map (kbd "C-c g l") 'gist-list)
 
 ;;; Magit
+;; This requires ido-completing-read+
+;(setq magit-completing-read-function 'magit-ido-completing-read)
+
+(setq magit-diff-highlight-hunk-region-functions
+      '(magit-diff-highlight-hunk-region-using-overlays
+        magit-diff-highlight-hunk-region-using-underline))
+
 (setq magit-uniquify-buffer-names nil)
 (setq magit-buffer-name-format "%x%M%v: %t%x")
 
 (define-key global-map (kbd "C-c g s") 'magit-status)
-(define-key global-map (kbd "C-c g l") 'magit-list-repositories)
 
 (defun lg-magit-display-func (buffer)
   (let ((buffer-major-mode (with-current-buffer buffer major-mode)))
@@ -1359,6 +1541,9 @@ If prefix ARG is given then insert result into the current buffer."
     (magit-diff-dwim args files)))
 
 (defun lg-magit-status-install-keys ()
+  ;; Do not open sections if searching with isearch
+  (setq-local isearch-filter-predicate #'isearch-filter-visible)
+
   (define-key magit-status-mode-map (kbd "=") 'lg-magit-diff-dwim)
   )
 
@@ -1436,10 +1621,6 @@ If prefix ARG is given then insert result into the current buffer."
   "Save places to file."
   (interactive)
   (save-place-kill-emacs-hook))
-
-;;
-(icomplete-mode)
-(setq icomplete-compute-delay 0.15)
 
 ;;; Sudoku
 ;;
@@ -1536,9 +1717,9 @@ If prefix ARG is given then insert result into the current buffer."
                      (calendar-absolute-from-gregorian
                       (list m2 (calendar-last-day-of-month m2 y2) y2)))))
 
-    (remove-if-not #'(lambda (x)
-                       (member (mod x 7) calendar-weekend-days))
-                   (number-sequence start-date end-date))))
+    (cl-remove-if-not #'(lambda (x)
+                          (member (mod x 7) calendar-weekend-days))
+                      (number-sequence start-date end-date))))
   ;; (let ((start-date (calendar-absolute-from-gregorian (list 1 1 displayed-year)))
   ;;       (end-date (calendar-absolute-from-gregorian (list 12 31 displayed-year))))
   ;;   (remove-if-not #'(lambda (x)
@@ -1824,6 +2005,15 @@ auto-insert-alist)
 (setq compilation-window-height 10)
 (setq compilation-ask-about-save nil)   ; do not ask about saving
 
+(defun lg-hide-compilation-buffer-on-success (buf msg)
+  "On success compilation hide compilation buffer."
+  (when (and (string= (buffer-name buf) "*compilation*")
+             (string= msg "finished\n"))
+    (when-let ((compwin (get-buffer-window buf)))
+      (delete-window compwin))))
+
+(add-hook 'compilation-finish-functions 'lg-hide-compilation-buffer-on-success)
+
 ;;; C-mode
 (push (cons 'c-mode "bsd") c-default-style)
 
@@ -2026,7 +2216,7 @@ auto-insert-alist)
 (setq erc-track-enable-keybindings t)
 (setq erc-nick "zevlg")
 
-;;; Nim langugae (package-install 'nim-mode)
+;;;{{{ `-- Nim language (package-install 'nim-mode)
 (setq nim-indent-offset 4)              ; default 2 is too small
 
 (setq nim-compile-default-command
@@ -2066,9 +2256,10 @@ auto-insert-alist)
                  eol
                  )
             1 2 3 (4 . nil)))
-(pushnew nim-compilation-error-regexp
-         compilation-error-regexp-alist-alist)
-(pushnew 'nim compilation-error-regexp-alist)
+(add-to-list 'compilation-error-regexp-alist-alist
+             nim-compilation-error-regexp)
+(add-to-list 'compilation-error-regexp-alist 'nim)
+;;;}}}
 
 ;;; Lua - https://github.com/immerrr/lua-mode.git
 ;; via MELPA (package-install 'lua-mode)
@@ -2175,15 +2366,28 @@ auto-insert-alist)
 
 ;;{{{ `-- Desktop
 
+;(setq initial-buffer-choice t)
+
+;;; Create *scratch-file* and make it unkillable
+(defun lg-init-scratch-buffer ()
+  (ignore-errors
+    (let ((kill-buffer-query-functions nil))
+      (kill-buffer "*scratch*")))
+
+  (with-current-buffer
+      (setq lsf-buffer (find-file-noselect lg-scratch-file))
+    (font-lock-mode -1)
+    (rename-buffer "*scratch*")))
+
 ;; Switch to scratch on startup, do it before loading `desktop',
 ;; because it adds hook into `after-init-hook'
-(add-hook 'after-init-hook 'lg-switch-to-scratch)
+(add-hook 'after-init-hook 'lg-init-scratch-buffer)
 
 (require 'desktop)
 
 ;; Restoring frames does not work under EXWM
 (setq desktop-restore-frames nil)
-(setq desktop-restore-eager nil)        ; load fils lazily
+(setq desktop-restore-eager 5)          ; load fils lazily
 
 (push 'dired-mode desktop-modes-not-to-save)
 (push 'multran-mode desktop-modes-not-to-save)
@@ -2194,10 +2398,25 @@ auto-insert-alist)
 (setq desktop-buffers-not-to-save
       "\\(^nn\\.a[0-9]+\\|\\.log\\|(ftp)\\|^tags\\|^TAGS\\|^worklog\\)$")
 
+(setq desktop-files-not-to-save
+      (concat desktop-files-not-to-save "\\|\\.gz$\\|/rt/\\|/rt-dev/"))
+
+;; Do not save files opened from telega
+(defun lg-desktop-non-telega-file-p (filename bufname mode &rest rest)
+  "Return non-nil if file is not a telega buffer."
+  (when (fboundp 'telega-buffer-p)      ;checks telega is loaded
+    (with-current-buffer bufname
+      (not (or (telega-buffer-p)
+               telega-edit-file-mode
+               (eq major-mode 'telega-image-mode)
+               telega--help-win-param)))))
+
+(setq desktop-buffers-not-to-save-function #'lg-desktop-non-telega-file-p)
+
 (setq desktop-globals-to-save
       '(desktop-missing-file-warning
-        kill-ring-yank-pointer
-        kill-ring
+        (kill-ring-yank-pointer . 50)
+        (kill-ring . 50)
 
         tags-file-name
         tags-table-list
@@ -2217,17 +2436,32 @@ auto-insert-alist)
         sudoku-solved-puzzles
         (command-history . 100)))
 
+;; No autosaving please, causes problems
+(setq desktop-auto-save-timeout nil)
+
 (desktop-save-mode 1)
 
 ;;}}}
 
 ;;{{{ `-- Telega (telegram client)
 
-;; avoid weird space look
-;(setq nobreak-char-display nil)         ;nbsp U+00A0
-
 (push "~/github/telega.el" load-path)
 (push "~/github/telega.el/contrib" load-path)
+
+(setq telega-adblock-sponsored-messages nil)
+
+(setq telega-use-docker nil)
+(setq telega-debug 'docker)
+
+(setq telega-patrons-disable-sponsored-messages nil)
+(setq telega-use-images t)
+
+;; Open .webm files in external viewer
+(add-to-list 'org-file-apps '("\\.webm\\'" . "mpv %s"))
+(setcdr (assq t org-file-apps-gnu) 'browse-url-xdg-open)
+
+(setcdr (assq 'file org-link-frame-setup) 'find-file)
+(setq telega-open-file-function 'org-open-file)
 
 ;; c-mode for autogenerated .tl files
 (add-to-list 'auto-mode-alist '("\\.tl\\'" . c-mode))
@@ -2235,9 +2469,7 @@ auto-insert-alist)
 (autoload 'telega "telega" "Telegram client" t)
 (define-key global-map (kbd "C-c t t") 'telega)
 
-(setq telega-debug t)
 (setq telega-filter-custom-expand t)
-(setq telega-voip-use-sounds t)
 (setq telega-use-tracking-for '(or unmuted mention))
 
 ;; (setq telega-animation-play-inline t)
@@ -2270,7 +2502,8 @@ auto-insert-alist)
 (defun lg-telega-chat-mode ()
   (set (make-local-variable 'company-backends)
        (append (list telega-emoji-company-backend
-                     'telega-company-username 'telega-company-hashtag)
+                     'telega-company-username
+                     'telega-company-hashtag)
                (when (telega-chat-bot-p telega-chatbuf--chat)
                  '(telega-company-botcmd))))
   (company-mode 1)
@@ -2283,43 +2516,80 @@ auto-insert-alist)
 
 (add-hook 'telega-chat-mode-hook 'lg-telega-chat-mode)
 
+(defun lg-telega-open-notes ()
+  "Open NOTES.org from the \"Saved Messages\""
+  (interactive)
+  (message "telega: Opening NOTES.org..")
+  (telega-msg-get (telega-chat-me) 185013895168
+    (lambda (msg &optional _offline-p)
+      (cl-assert (telega-msg-type-p 'messageDocument msg))
+      (telega-msg-open-document msg))))
+
 (defun lg-telega-load ()
+  (require 'telega-dashboard)
+  (add-to-list 'dashboard-items '(telega-chats . 5))
+
+  (require 'telega-stories)
+  (telega-stories-mode 1)
+  (add-to-list 'dashboard-items '(telega-stories . 5))
+  (define-key telega-root-mode-map (kbd "v e") 'telega-view-emacs-stories)
+
   (require 'telega-url-shorten)
   (global-telega-url-shorten-mode)
 
-  (setq telega-chat-me-custom-title
-        (lambda (title)
-          (concat (propertize "🎗" 'face 'telega-blue)
-                  (propertize title 'face 'bold))))
+  ;; `C-c o l' to copy telega links
+  (require 'ol-telega)
 
-  (push "@fmusbot" telega-known-inline-bots)
+  ;; Code highlighting
+  (require 'telega-mnz)
+  (global-telega-mnz-mode 1)
+
+  ;; Blocking adverts in channels
+  (require 'telega-adblock)
+  (setq telega-adblock-chat-order-if-last-message-ignored "1")
+  (telega-adblock-mode 1)
+
+  (setq telega-chat-title-custom-for
+        (list (cons '(or saved-messages replies-messages)
+                    (lambda (title)
+                      (concat (propertize "🎗" 'face 'telega-blue)
+                              (propertize title 'face 'bold))))))
+
+  (cl-pushnew "@fmusbot" telega-known-inline-bots)
+  (cl-pushnew "@emojimixbot" telega-known-inline-bots)
   (define-key global-map (kbd "C-c t") telega-prefix-map)
+
+;  (define-key telega-prefix-map (kbd "n") 'lg-telega-open-notes)
 
 ;  (telega-mode-line-mode 1)
 
+  (setq telega-completing-read-function 'ido-completing-read)
   (when (telega-x-frame)
-    (setq telega-symbol-eliding "…")
-    (setq telega-symbol-underline-bar
-          (propertize " " 'face 'telega-webpage-strike-through))
-    (telega-symbol-set-width telega-symbol-eliding 2))
+;    (setq telega-symbol-eliding "…")
+;    (telega-symbol-set-width telega-symbol-eliding 2)
+    )
 
   ;; Install custom symbols widths
-  (telega-symbol-set-width "♥" 2)
-  (telega-symbol-set-width "🎗" 2)
-  (telega-symbol-set-width "∏" 2)
-  (telega-symbol-set-width "∑" 2)
-  (telega-symbol-set-width (cons 127344 127384) 2)
+  ;; (dolist (c2 '("♥" "🎗" "∏" "∑" "★" "🛠"
+  ;;               "🇦" "🇧" "🇨" "🇩" "🇪" "🇫" "🇯" "🇰"
+  ;;               "🇱" "🇲" "🇳" "🇴" "🇵" "🇶" "🇷" "🇸"
+  ;;               "🇹" "🇺" "🇻" "🇼" "🇽" "🇾" "🇿"))
+  ;;   (telega-symbol-set-width c2 2))
+  ;; (telega-symbol-set-width (cons 127344 127384) 2)
 
-  (set-face-attribute 'telega-entity-type-pre nil :height 0.82)
-  (set-face-attribute 'telega-entity-type-code nil :height 0.82)
   )
 
 (add-hook 'telega-load-hook 'lg-telega-load)
 (add-hook 'telega-load-hook 'telega-mode-line-mode)
+(add-hook 'telega-load-hook 'telega-appindicator-mode)
+(add-hook 'telega-load-hook 'telega-autoplay-mode)
 (add-hook 'telega-load-hook 'global-telega-squash-message-mode)
+(add-hook 'telega-load-hook 'telega-my-location-mode)
+
+(add-hook 'telega-open-file-hook 'telega-edit-file-mode)
 
 ;;}}}
-;;{{{ `-- Vterm (telegram client)
+;;{{{ `-- Vterm
 
 (use-package vterm
   :load-path "~/dev/emacs-libvterm"
@@ -2330,13 +2600,16 @@ auto-insert-alist)
   (setq vterm-disable-underline t)
   (setq vterm-disable-inverse-video t)
   (setq vterm-keymap-exceptions
-        '("C-c" "C-x" "C-g" "C-h" "C-l" "M-x" "C-y" "M-y"))
+        '("C-c" "C-x" "C-g" "C-h" "C-l" "M-x" "C-y" "M-y" "C-M-l"))
   :commands (vterm)
   :config
+  (defface lg-vterm-face
+    '((t :family "DejaVu Sans Mono" :height 0.5
+         :foreground "green" :background "black"))
+    "Face for my vterms.")
+
   (set-face-foreground 'vterm-color-underline "yellow")
   (set-face-background 'vterm-color-inverse-video "green4")
-  (set-face-foreground 'vterm-color-default "green")
-  (set-face-background 'vterm-color-default "black")
   (set-face-background 'vterm-color-black "gray20")
   (set-face-background 'vterm-color-blue "DodgerBlue3")
   (set-face-foreground 'vterm-color-blue "royal blue")
@@ -2347,14 +2620,20 @@ auto-insert-alist)
   (define-key vterm-mode-map (kbd "C-<down>") 'vterm--self-insert)
   (define-key vterm-mode-map (kbd "C-<SPC>") 'lg-vterm-copy-mode-set-mark)
   (define-key vterm-mode-map (kbd "C-c C-x") 'vterm-send-C-x)
-  (define-key vterm-mode-map (kbd "C-c M-x") 'vterm-send-M-x))
+  (define-key vterm-mode-map (kbd "C-c M-x") 'vterm-send-M-x)
+
+  (defun lg-on-vterm-mode ()
+    (setq buffer-face-mode-face 'lg-vterm-face)
+    (buffer-face-mode 1))
+
+  (add-hook 'vterm-mode-hook 'lg-on-vterm-mode))
 
 (defun lg-vterm-copy-mode-set-mark ()
   "Enter vterm-copy-mode and set mark at point."
   (interactive)
   (vterm-copy-mode)
   (set-mark-command nil))
- 
+
 (defun lg-switch-to-vterm (arg &optional shell-cmd)
   (interactive "p")
   (let* ((bufname (concat "vterm" (number-to-string arg)))
@@ -2372,14 +2651,25 @@ auto-insert-alist)
 (define-key global-map (kbd "C-c v") #'lg-switch-to-vterm)
 (define-key global-map (kbd "C-c V") #'lg-switch-to-vterm2)
 
+
 ;; Viewing asciinema with vterm
+(defun lg-asciinema-done (buffer &rest _ignored)
+  (when buffer
+    (message "asciinema: play done! Press `q' to close"))
+  )
+
 (defun lg-asciinema-view (url &optional speed)
   (let ((vterm-shell (concat "asciinema play -s "
                              (number-to-string (or speed 2))
                              " " url)))
     (vterm "asciinema")
-    (text-scale-decrease 4)
-    ))
+    (text-scale-decrease 2)
+
+    (setq-local vterm-kill-buffer-on-exit nil)
+    (add-hook 'vterm-exit-functions 'lg-asciinema-done nil 'local)
+
+    (local-set-key (kbd "q") 'quit-window)
+    (message "asciinema: Press `q' to quit")))
 
 (defun lg-maybe-asciinema-view (origfunc url &optional in-web-browser)
   "Maybe open link to asciinema.org in vterm."
@@ -2393,6 +2683,38 @@ auto-insert-alist)
 ;; Char-mode for vterm
 
 ;;}}}
+
+;;{{{ `-- Clojure / CIDER
+
+(use-package cider
+  :init
+  ;; TODO
+  )
+
+;;}}}
+
+;;{{{ `-- Go mode
+
+;; No headerline please
+(setq lsp-headerline-breadcrumb-enable nil)
+
+(add-to-list 'exec-path (expand-file-name "~/go/bin"))
+
+(defun lg-on-go-mode ()
+;  (yas-minor-mode-on)
+  (lsp-deferred)
+
+  (local-set-key (kbd "C-c c c") 'go-errcheck)
+
+  ;; Set up before-save hooks to format buffer and add/delete imports.  Make
+  ;; sure you don't have other gofmt/goimports hooks enabled.
+  (add-hook 'before-save-hook #'lsp-format-buffer t t)
+  (add-hook 'before-save-hook #'lsp-organize-imports t t))
+
+(add-hook 'go-mode-hook 'lg-on-go-mode)
+
+;;}}}
+
 ;;{{{ `-- Misc modes customization
 
 ;; Convert "unknown" image formats with external converter
@@ -2473,6 +2795,27 @@ Or run `call-last-kbd-macro' otherwise."
 
 ;;}}}
 
+;;;{{{ `-- Clojure
+
+(add-hook 'cider-repl-mode-hook 'company-mode)
+(add-hook 'clojure-mode-hook 'company-mode)
+(add-hook 'clojure-mode-hook 'cider-mode)
+
+(define-key clojure-mode-map (kbd "C-c e b") 'cider-eval-buffer)
+(define-key clojure-mode-map (kbd "C-c e r") 'cider-eval-region)
+(define-key clojure-mode-map (kbd "C-c e f") 'cider-eval-defun-at-point)
+(define-key clojure-mode-map (kbd "C-c e e") 'cider-macroexpand-1)
+
+(define-key clojure-mode-map (kbd "C-c d e") 'cider-switch-to-repl-buffer)
+
+;;;}}}
+
+;;;{{{ `-- Tramp
+;; Accept fancy colored prompts
+(setq tramp-shell-prompt-pattern
+      "\\(?:^\\|\r\\)[^]#$%>\n]*#?[]#$%>].* *\\(^[\\[[0-9;]*[a-zA-Z] *\\)*")
+;;;}}}
+
 ;; favorite unicode chars
 (define-key global-map (kbd "C-x 8 0") (kbd "°"))
 (define-key global-map (kbd "C-x 8 r") (kbd "₽"))
@@ -2484,16 +2827,123 @@ Or run `call-last-kbd-macro' otherwise."
                   (expand-file-name "backups" user-emacs-directory))))
 
 ;;; Work specific emacs setup
-(ignore-errors
-  (require 'work))
+(ignore-error 'file-missing
+  (load-library "work.el"))
 
 ;;; Home specific stuff
-(ignore-errors
-  (require 'home))
+(ignore-error 'file-missing
+  (load-library "home.el"))
 
 (ignore-errors
-  (let ((exwm-debug-on t))
-    (load-library "exwmrc")
-    ;; Enable EXWM for non-tty emacs
-    (when window-system
-      (exwm-enable))))
+  (when (getenv "WITH_EXWM")
+    (let ((exwm-debug-on t))
+;      (load-library "exwmrc")
+      (require 'exwm)
+      (require 'exwm-config)
+      (exwm-config-example)
+
+      ;; Enable system tray
+      (require 'exwm-systemtray)
+      (exwm-systemtray-enable)
+
+      ;; Enable debugging
+      (exwm-debug 1)
+      ;; Enable EXWM for non-tty emacs
+      ;; (when window-system
+      ;;   (exwm-enable))
+      )))
+
+;; Dashboard
+(use-package dashboard
+  :init
+  (setq dashboard-image-banner-max-height 64)
+  (setq dashboard-startup-banner 'logo)
+  (setq dashboard-banner-logo-title nil)
+  (setq dashboard-set-footer nil)
+  (setq dashboard-set-heading-icons t)
+
+  )
+
+(use-package dockerfile-mode
+  :init
+  (add-to-list 'auto-mode-alist '("Dockerfile.*\\'" . dockerfile-mode))
+  )
+
+;; (use-package yascroll
+;;   :ensure t
+;;   :config
+;;   (setq yascroll:delay-to-hide nil)
+;;   (setq yascroll:scroll-bar '(right-fringe))
+;;   (global-yascroll-bar-mode 1)
+;;   )
+
+(use-package mlscroll
+  :ensure t
+  :config
+  (setq mlscroll-in-color "gray70")
+  (setq mlscroll-out-color "gray85")
+  (setq mlscroll-minimum-current-width 4)
+  (setq mlscroll-border 2)
+  (mlscroll-mode 1))
+
+(use-package sudo-edit
+  :config (sudo-edit-indicator-mode)
+  :commands (sudo-edit))
+
+;;; Fonts setup
+(set-fontset-font t 'symbol "Symbola" nil 'prepend)
+;(set-fontset-font t 'unicode "Symbola" nil 'append)
+
+;(set-fontset-font t 'unicode "AllTheIcons" nil 'append)
+(set-fontset-font t 'unicode "all-the-icons" nil 'append)
+(set-fontset-font t 'unicode "file-icons" nil 'append)
+(set-fontset-font t 'unicode "github-octicons" nil 'append)
+;(set-fontset-font t 'unicode "FontAwesome" nil 'prepend)
+
+(set-fontset-font t 'mathematical "DejaVu Serif" nil 'append)
+
+;;; Profiler setup
+(setq profiler-report-cpu-line-format
+      '((10 right ((5 right) (5 right)))
+        (1 left "%s")
+        (0 left)))
+
+(setq profiler-report-memory-line-format
+  '((100 left)
+    (19 right ((14 right profiler-format-number)
+               (5 right)))))
+(put 'upcase-region 'disabled nil)
+
+;;; Reverse-im
+
+;; Taken from https://github.com/xFA25E/cyrillic-dvorak-im/blob/master/cyrillic-dvorak-im.el
+(require 'quail)
+
+(quail-define-package
+ "cyrillic-dvorak" "Cyrillic" "ЙЦУК" nil
+ "ЙЦУКЕН keyboard layout widely used in Russia (ISO 8859-5 encoding)
+  in assuming that your default keyboard layout is dvorak"
+ nil t t t t nil nil nil nil nil t)
+
+;;  1! 2" 3' 4; 5 6: 7? 8 9( 0) -_ =+ Ё
+;;   Й  Ц  У  К  Е  Н  Г  Ш  Щ  З  Х  ъ
+;;    Ф  Ы  В  А  П  Р  О  Л  Д Ж  Э
+;;     Я  Ч  С  М  И  Т  Ь  Б  Ю  .,
+
+(quail-define-rules
+ ("1" ?1) ("2" ?2) ("3" ?3) ("4" ?4) ("5" ?5) ("6" ?6) ("7" ?7) ("8" ?8) ("9" ?9) ("0" ?0) ("[" ?-) ("]" ?=)
+ ("`" ?ё) ("'" ?й) ("," ?ц) ("." ?у) ("p" ?к) ("y" ?е) ("f" ?н) ("g" ?г) ("c" ?ш) ("r" ?щ) ("l" ?з) ("/" ?х) ("=" ?ъ)
+ ("a" ?ф) ("o" ?ы) ("e" ?в) ("u" ?а) ("i" ?п) ("d" ?р) ("h" ?о) ("t" ?л) ("n" ?д) ("s" ?ж) ("-" ?э) ("\\" ?\\) (";" ?я)
+ ("q" ?ч) ("j" ?с) ("k" ?м) ("x" ?и) ("b" ?т) ("m" ?ь) ("w" ?б) ("v" ?ю) ("z" ?.)
+
+ ("!" ?!) ("@" ?\") ("#" ?') ("$" ?\;) ("%" ?%) ("^" ?:) ("&" ??) ("*" ?*) ("(" ?\() (")" ?\)) ("{" ?_) ("}" ?+) ("~" ?Ё) ("\"" ?Й)
+ ("<" ?Ц) (">" ?У) ("P" ?К) ("Y" ?Е) ("F" ?Н) ("G" ?Г) ("C" ?Ш) ("R" ?Щ) ("L" ?З) ("?" ?Х) ("+" ?Ъ)
+ ("A" ?Ф) ("O" ?Ы) ("E" ?В) ("U" ?А) ("I" ?П) ("D" ?Р) ("H" ?О) ("T" ?Л) ("N" ?Д) ("S" ?Ж) ("_" ?Э) ("|" ?/) (":" ?Я)
+ ("Q" ?Ч) ("J" ?С) ("K" ?М) ("X" ?И) ("B" ?Т) ("M" ?Ь) ("W" ?Б) ("V" ?Ю) ("Z" ?,))
+
+(use-package reverse-im
+  :ensure t
+  :custom
+  (reverse-im-input-methods '("cyrillic-dvorak"))
+  :config
+  (reverse-im-mode t))
