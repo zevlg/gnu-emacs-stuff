@@ -14,7 +14,11 @@
 (setq gc-cons-threshold (* 4 8388608))
 (setq-default garbage-collection-messages t)
 
+(setq inhibit-compacting-font-caches t)
+
 (add-to-list 'default-frame-alist '(fullscreen . maximized))
+(when (eq system-type 'darwin)
+  (add-to-list 'default-frame-alist '(undecorated . t)))
 
 (require 'package)
 ;; (add-to-list 'package-archives
@@ -201,6 +205,14 @@
     (save-excursion
       (call-interactively #'org-emphasize))
     )
+
+  (defun lg-org-mode-setup ()
+    (set (make-local-variable 'company-backends)
+         '(company-org-block))
+    (company-mode 1)
+    )
+
+  (add-hook 'org-mode-hook 'lg-org-mode-setup)
   (add-hook 'org-mode-hook 'auto-fill-mode)
   :bind (("C-c o a" . org-agenda)
          ("C-c o l" . org-store-link)
@@ -214,6 +226,8 @@
          ("C-c o p" . org-previous-link)
          ("C-c o TAB" . org-next-link)
          ("C-c o <backtab>" . org-previous-link)
+
+         ("C-c o RET" . org-toggle-link-display)
 
          :map org-mode-map
          ("RET" . lg-org-return)
@@ -233,6 +247,11 @@
 
 (use-package company
   :init
+  (setq company-backends '(company-cmake
+                           company-clang
+                           company-files
+                           (company-dabbrev-code company-keywords)
+                           company-dabbrev))
   (setq company-tooltip-align-annotations t)
   (setq company-idle-delay 0.1)
   :bind (:map company-active-map
@@ -377,11 +396,13 @@ bottom of the buffer stack."
 ;;; icomplete to mimic `ido' for completions
 ;; RET forces first match
 (use-package icomplete
-  :init 
+  :init
   (setq icomplete-compute-delay 0.15)
   (setq completion-show-help nil)
-  (setq icomplete-show-matches-on-no-input t)
-  (setq completion-styles '(basic partial-completion emacs22))
+  ;; NOTE: Setting `icomplete-show-matches-on-no-input' to non-nil
+  ;; makes icomplete to always accept first match
+  (setq icomplete-show-matches-on-no-input nil)
+  (setq completion-styles '(basic partial-completion emacs22 flex))
 
   (defun lg-icomplete-minibuffer-setup ()
     (when (and icomplete-mode (icomplete-simple-completing-p))
@@ -399,7 +420,7 @@ bottom of the buffer stack."
 
 ;;; Use ido to switch buffers and open files
 (use-package ido
-  :init 
+  :init
   (setq ido-max-window-height 1)
   ;; Use `.' for dired
   (setq ido-show-dot-for-dired t)
@@ -657,10 +678,37 @@ If no region, translate word at point."
 
 ;;; Remove annoying bindings
 (define-key global-map (kbd "C-z") 'nil)
+(define-key global-map (kbd "C-z") 'ido-switch-buffer)
 (define-key global-map (kbd "C-x C-=") 'nil)
 
 (define-key global-map (kbd "C-=") 'what-cursor-position)
 (define-key global-map (kbd "M-=") 'count-words)
+
+(defun lg-zap-to-char (include-char-p)
+  "Zap to a char.
+If `\\[universal-argument]' is specified then zap including char."
+  (interactive "P")
+  (let ((char (read-char "Zap to char: ")))
+    ;; ^M -> \n
+    (when (eq char 13)
+      (setq char ?\n))
+
+    (if include-char-p
+        (zap-to-char 1 char)
+      (zap-up-to-char 1 char))))
+(define-key global-map (kbd "M-z") 'lg-zap-to-char)
+
+(defun lg-jump-to-char ()
+  "Jump to the char."
+  (interactive)
+  (let ((char (read-char "Jump to char: ")))
+    ;; ^M -> \n
+    (when (eq char 13)
+      (setq char ?\n))
+
+    (search-forward (char-to-string char))
+    (backward-char)))
+(define-key global-map (kbd "M-k") 'lg-jump-to-char)
 
 ;;}}}
 
@@ -902,7 +950,7 @@ CSTR can contain special escape sequences:
 (setq display-time-default-load-average nil)
 (setq display-time-24hr-format t)
 (setq display-time-day-and-date t)
-(display-time-mode 1)
+(display-time-mode 0)
 
 (setq line-number-mode t)
 (setq column-number-mode t)
@@ -1046,11 +1094,19 @@ If prefix ARG is specified - create public gist."
   (defun lg-gist-open-index ()
     "Open gist with my index.org file."
     (interactive)
-    (gist-org-open lg-gist-index-id)) 
+    (gist-org-open lg-gist-index-id))
 
   :config
   (gist-org-mode-setup)
- )
+  )
+
+(use-package eukleides
+  :load-path "~/github/eukleides.el"
+  :init
+  (setq auto-mode-alist
+        (append '(("\\.euk$" . eukleides-mode)) auto-mode-alist))
+  :hook  (eukleides-mode-hook . eldoc-mode)
+  )
 
 
 (defun lg-buffer-file-git-p (&optional buffer)
@@ -1218,6 +1274,15 @@ M-{ causes next skeleton insertation.
 
 ;;}}}
 
+;;{{{ `-- Which Func Mode
+(setq which-func-modes
+      '(emacs-lisp-mode c-mode c++-mode objc-mode python-mode
+         	        makefile-mode sh-mode diff-mode)
+      )
+(which-function-mode 1)
+
+;;;}}}
+
 ;;{{{ `-- ELDOC customization
 
 ;; Fast refresh
@@ -1280,7 +1345,6 @@ M-{ causes next skeleton insertation.
   (local-set-key (kbd "C-c c c") 'byte-compile-file)
   )
 
-(add-hook 'emacs-lisp-mode-hook 'which-function-mode)
 (add-hook 'emacs-lisp-mode-hook 'lg-emacs-lisp-mode-customize)
 
 ;; Evaluate current-buffer
@@ -1352,7 +1416,6 @@ If prefix ARG is specified, then replace region with the evaluation result."
 (add-hook 'python-shell-first-prompt-hook
           #'python-shell-completion-native-turn-on-maybe)
 
-
 (defun lg-py-shell ()
   "Switch to python interpreter."
   (interactive)
@@ -1391,6 +1454,9 @@ If prefix ARG is given then insert result into the current buffer."
         (insert res)
       (message "Result: [%s] = %s" pyexpr res))))
 (global-set-key (kbd "M-#") 'lg-python-mini-calc)
+
+;;; python venv for LSP
+;; python -m venv
 
 ;; C-ce Editing prefix
 (define-key global-map (kbd "C-c e c") 'checkdoc)
@@ -1446,8 +1512,8 @@ If prefix ARG is given then insert result into the current buffer."
 (define-key global-map (kbd "C-c d f") 'lg-flyspell-region-or-buffer)
 (define-key global-map (kbd "C-c d d") 'multitran)
 (define-key global-map (kbd "C-c d r") 'multitran)
-(define-key global-map (kbd "C-c d t") 'lg-google-translate)
-(define-key global-map (kbd "C-c d i") 'lg-google-translate-inplace)
+(define-key global-map (kbd "C-c d t") 'telega-translate-region)
+(define-key global-map (kbd "C-c d i") 'telega-translate-region-inplace)
 (define-key global-map (kbd "C-c d g") 'grammarbot)
 (define-key global-map (kbd "C-c d w") 'wolfram-alpha)
 
@@ -1552,14 +1618,35 @@ If prefix ARG is given then insert result into the current buffer."
 (setq magit-display-buffer-function 'lg-magit-display-func)
 (setq magit-section-initial-visibility-alist '((untracked . hide)))
 
+(use-package magit-todos
+  :init
+  (add-hook 'magit-mode-hook 'magit-todos-mode))
+
 ;;}}}
 
+;; 
+(defun lg-maybe-smerge-mode ()
+  "Enable `smerge-mode' if conflict pattern is found."
+  (save-excursion
+    (goto-char (point-min))
+    (when (re-search-forward "^<<<<<<< " nil t)
+      (smerge-mode 1))))
+(add-hook 'find-file-hook 'lg-maybe-smerge-mode t)
+
+(use-package flymake
+  :bind (:map flymake-mode-map
+              ("M-g n" . flymake-goto-next-error)
+              ("M-g p" . flymake-goto-prev-error)
+              ("M-g d" . flymake-show-buffer-diagnostics)))
+
 ;;{{{ `-- Python
+
 
 ;; Builtint `python-mode' is slow in emacs 25, so use this one
 ;; https://gitlab.com/python-mode-devs/python-mode.git
 (push "~/.emacs.d/lisp/python-mode" load-path)
 (require 'python-mode)
+
 
 ;; make flymake marks more visible
 (define-fringe-bitmap 'flymake-double-exclamation-mark
@@ -1996,7 +2083,15 @@ auto-insert-alist)
         (call-interactively 'browse-url-at-point)
       (call-interactively 'browse-url))))
 
+(defun lg-copy-url-at-point ()
+  "Copy url at point into kill ring."
+  (interactive)
+  (when-let ((url (browse-url-url-at-point)))
+    (kill-new url)
+    (message "Copied %S" url)))
+
 (define-key global-map (kbd "C-c w w") 'lg-browse-url-at-point)
+(define-key global-map (kbd "C-c w c") 'lg-copy-url-at-point)
 
 ;;}}}
 
@@ -2448,8 +2543,7 @@ auto-insert-alist)
 (push "~/github/telega.el" load-path)
 (push "~/github/telega.el/contrib" load-path)
 
-(setq telega-adblock-sponsored-messages nil)
-
+(setq telega-language "ru")
 (setq telega-use-docker nil)
 (setq telega-debug 'docker)
 
@@ -2499,11 +2593,20 @@ auto-insert-alist)
 
 ;(setq telega-emoji-company-backend 'telega-company-telegram-emoji)
 
+;; Complete usernames for chats from the same folder as chatbuf folder
+(setq telega-company-username-complete-nonmember-for
+      '(call (lambda (chat)
+               (seq-intersection
+                (telega-chat-folders chat)
+                (telega-chat-folders telega-chatbuf--chat)
+                #'equal))))
+
 (defun lg-telega-chat-mode ()
   (set (make-local-variable 'company-backends)
        (append (list telega-emoji-company-backend
                      'telega-company-username
-                     'telega-company-hashtag)
+                     'telega-company-hashtag
+                     'telega-company-markdown-precode)
                (when (telega-chat-bot-p telega-chatbuf--chat)
                  '(telega-company-botcmd))))
   (company-mode 1)
@@ -2512,6 +2615,16 @@ auto-insert-alist)
   ;; (set-face-attribute 'my-telega-face nil :font "DejaVu Sans Mono")
   ;; (setq buffer-face-mode-face 'my-telega-face)
   ;; (buffer-face-mode)
+
+  ;; Translations
+  (setq telega-translate-replace-content nil)
+  (when (telega-chatbuf-match-p '(has-username "TGgeek"))
+    ;; Channels don't need `telega-chatbuf-language-code' because you
+    ;; can't post
+    (telega-auto-translate-mode 1))
+  (when (telega-chatbuf-match-p '(has-username "emacs_china"))
+    (setq telega-chatbuf-language-code "zh")
+    (telega-auto-translate-mode 1))
   )
 
 (add-hook 'telega-chat-mode-hook 'lg-telega-chat-mode)
@@ -2522,8 +2635,15 @@ auto-insert-alist)
   (message "telega: Opening NOTES.org..")
   (telega-msg-get (telega-chat-me) 185013895168
     (lambda (msg &optional _offline-p)
-      (cl-assert (telega-msg-type-p 'messageDocument msg))
+      (cl-assert (telega-msg-match-p  msg '(type Document)))
       (telega-msg-open-document msg))))
+
+(defun lg-telega-work-time-p ()
+  "Return non-nil if currently is working hours."
+  (let ((dtime (decode-time)))
+    ;; Mon-Fri from 11:00 to 19:00
+    (and (memq (decoded-time-weekday dtime) '(1 2 3 4 5))
+         (memq (decoded-time-hour dtime) '(11 12 13 14 15 16 17 18)))))
 
 (defun lg-telega-load ()
   (require 'telega-dashboard)
@@ -2563,26 +2683,29 @@ auto-insert-alist)
 
 ;  (telega-mode-line-mode 1)
 
-  (setq telega-completing-read-function 'ido-completing-read)
+;  (setq telega-completing-read-function 'ido-completing-read)
   (when (telega-x-frame)
 ;    (setq telega-symbol-eliding "…")
 ;    (telega-symbol-set-width telega-symbol-eliding 2)
     )
 
-  ;; Install custom symbols widths
-  ;; (dolist (c2 '("♥" "🎗" "∏" "∑" "★" "🛠"
-  ;;               "🇦" "🇧" "🇨" "🇩" "🇪" "🇫" "🇯" "🇰"
-  ;;               "🇱" "🇲" "🇳" "🇴" "🇵" "🇶" "🇷" "🇸"
-  ;;               "🇹" "🇺" "🇻" "🇼" "🇽" "🇾" "🇿"))
-  ;;   (telega-symbol-set-width c2 2))
-  ;; (telega-symbol-set-width (cons 127344 127384) 2)
-
+  ;; Notifications by keyword or work chats at working hours
+  (setq telega-notifications-msg-temex
+        '(and (not outgoing)
+              (not (chat (or (type channel)
+                             (name "шахматы"))))
+              (or (type VideoChatStarted)
+                  (contains "telega\\|[тТ]елег[^р]")
+                  (and (chat (folder "work"))
+                       (eval (lg-telega-work-time-p))))))
+  (telega-notifications-mode 1)
   )
 
 (add-hook 'telega-load-hook 'lg-telega-load)
 (add-hook 'telega-load-hook 'telega-mode-line-mode)
 (add-hook 'telega-load-hook 'telega-appindicator-mode)
 (add-hook 'telega-load-hook 'telega-autoplay-mode)
+(add-hook 'telega-load-hook 'telega-recognize-voice-message-mode)
 (add-hook 'telega-load-hook 'global-telega-squash-message-mode)
 (add-hook 'telega-load-hook 'telega-my-location-mode)
 
@@ -2626,13 +2749,25 @@ auto-insert-alist)
     (setq buffer-face-mode-face 'lg-vterm-face)
     (buffer-face-mode 1))
 
-  (add-hook 'vterm-mode-hook 'lg-on-vterm-mode))
+  (add-hook 'vterm-mode-hook 'lg-on-vterm-mode)
+
+  (defun lg-vterm-copy-mode-header ()
+    "Emphasize copy mode with header line."
+    (if vterm-copy-mode
+        (setq header-line-format
+              (propertize "--- VTERM COPY ---" 'face 'error))
+      (setq header-line-format nil)))
+
+  (add-hook 'vterm-copy-mode-hook 'lg-vterm-copy-mode-header)
+  )
 
 (defun lg-vterm-copy-mode-set-mark ()
   "Enter vterm-copy-mode and set mark at point."
   (interactive)
   (vterm-copy-mode)
   (set-mark-command nil))
+
+(defvar lg-vterm-shells '("screen -DR"))
 
 (defun lg-switch-to-vterm (arg &optional shell-cmd)
   (interactive "p")
@@ -2641,7 +2776,11 @@ auto-insert-alist)
     (if vterm-buf
         (switch-to-buffer vterm-buf)
 
-      (let ((vterm-shell (or shell-cmd vterm-shell)))
+      (let ((vterm-shell
+             (if (eq arg '4)
+                 (read-string "Shell for new vterm: ")
+               (or (nth (1- arg) lg-vterm-shells)
+                   (error "No shell is defined for %S" arg)))))
         (vterm bufname)))))
 
 (defun lg-switch-to-vterm2 ()
@@ -2895,9 +3034,9 @@ Or run `call-last-kbd-macro' otherwise."
 ;(set-fontset-font t 'unicode "Symbola" nil 'append)
 
 ;(set-fontset-font t 'unicode "AllTheIcons" nil 'append)
-(set-fontset-font t 'unicode "all-the-icons" nil 'append)
-(set-fontset-font t 'unicode "file-icons" nil 'append)
-(set-fontset-font t 'unicode "github-octicons" nil 'append)
+;(set-fontset-font t 'unicode "all-the-icons" nil 'append)
+;(set-fontset-font t 'unicode "file-icons" nil 'append)
+;(set-fontset-font t 'unicode "github-octicons" nil 'append)
 ;(set-fontset-font t 'unicode "FontAwesome" nil 'prepend)
 
 (set-fontset-font t 'mathematical "DejaVu Serif" nil 'append)
