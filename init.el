@@ -11,8 +11,11 @@
 ;;   M-x package-install-selected-packages RET
 ;; after loading init.el fo the first time
 ;;
-(setq gc-cons-threshold (* 4 8388608))
+(setq gc-cons-threshold (* 4 83886080))
 (setq-default garbage-collection-messages t)
+
+;; Shutup `ad-handle-definition' warnings
+(setq ad-redefinition-action 'accept)
 
 (setq inhibit-compacting-font-caches t)
 
@@ -139,6 +142,8 @@
  '(org-indent ((t (:background "gray78" :foreground "gray78"))))
  '(org-block ((t (:background "gray75" :family "FreeMono" :height 0.85))))
  '(org-block-begin-line ((t (:background "gray75"))))
+
+ '(sh-heredoc ((t (:foreground "orange red"))))
  )
 
 (enable-theme 'lg-xemacs-like)
@@ -190,15 +195,8 @@
   (setq org-log-done 'time)
   (setq org-log-redeadline 'time)
 
-  (defun lg-org-return ()
-    "Open a link at point or insert newline."
-    (interactive)
-    (let ((faces (get-text-property (point) 'face)))
-      (if (or (when (listp faces)
-                (memq 'org-link faces))
-              (eq 'org-link faces))
-          (call-interactively 'org-open-at-point)
-        (call-interactively 'org-return))))
+  ;; RET on link to follow link
+  (setq org-return-follows-link t)
 
   (defun lg-org-emphasize ()
     (interactive)
@@ -214,6 +212,11 @@
 
   (add-hook 'org-mode-hook 'lg-org-mode-setup)
   (add-hook 'org-mode-hook 'auto-fill-mode)
+
+  :config
+  (setf (alist-get 'state org-log-note-headings)
+        "%s :: %t")
+
   :bind (("C-c o a" . org-agenda)
          ("C-c o l" . org-store-link)
          ("C-c o y" . org-insert-last-stored-link)
@@ -229,8 +232,6 @@
 
          ("C-c o RET" . org-toggle-link-display)
 
-         :map org-mode-map
-         ("RET" . lg-org-return)
          ;; clocking
          ("C-c c c" . lg-org-clock-toggle)))
 
@@ -404,6 +405,16 @@ bottom of the buffer stack."
   (setq icomplete-show-matches-on-no-input nil)
   (setq completion-styles '(basic partial-completion emacs22 flex))
 
+  ;; Always show full names, common prefix makes completions looks
+  ;; confusing
+  (setq icomplete-hide-common-prefix nil)
+
+  ;; ~/ to reset path
+  (setq icomplete-tidy-shadowed-file-names t)
+
+  ;; Wait for input to start showing candidates
+  (setq icomplete-show-matches-on-no-input nil)
+
   (defun lg-icomplete-minibuffer-setup ()
     (when (and icomplete-mode (icomplete-simple-completing-p))
       (use-local-map (make-composed-keymap
@@ -429,9 +440,18 @@ bottom of the buffer stack."
   ;; Enter directory on `/'
   (setq ido-enter-matching-directory 'first)
 
+  ;; Show buffers from `recentf'
+  (setq ido-use-virtual-buffers t)
+
+  (defun lg-telega-chatbuf-p (name)
+    (when-let ((buf (get-buffer name)))
+      (with-current-buffer buf
+        (derived-mode-p 'telega-root-mode 'telega-chat-mode))))
+
   :config
+  (define-key ido-common-completion-map (kbd "M-j") 'ido-select-text)
   ;; Ignore telega chat buffers
-  (add-to-list 'ido-ignore-buffers "\\`◀")
+  (add-to-list 'ido-ignore-buffers #'lg-telega-chatbuf-p)
   (ido-mode 1))
 
 ;; M-x package-install RET undo-tree RET
@@ -688,7 +708,8 @@ If no region, translate word at point."
   "Zap to a char.
 If `\\[universal-argument]' is specified then zap including char."
   (interactive "P")
-  (let ((char (read-char "Zap to char: ")))
+  (let ((char (with-selected-window (minibuffer-window)
+                (read-char "Zap to char: " 'inherit-input-method))))
     ;; ^M -> \n
     (when (eq char 13)
       (setq char ?\n))
@@ -708,7 +729,7 @@ If `\\[universal-argument]' is specified then zap including char."
 
     (search-forward (char-to-string char))
     (backward-char)))
-(define-key global-map (kbd "M-k") 'lg-jump-to-char)
+(define-key global-map (kbd "M-o") 'lg-jump-to-char)
 
 ;;}}}
 
@@ -747,6 +768,9 @@ Otherwise toggle."
                  (not debug-on-error))
             (and (not (null arg))
                  (> (prefix-numeric-value arg) 0))))
+  ;; Also trac errors during redisplay
+  (setq backtrace-on-redisplay-error
+        debug-on-error)
   (message "Debug on error is %s" (if debug-on-error "ON" "OFF")))
 
 (defun debug-on-quit (arg)
@@ -958,6 +982,8 @@ CSTR can contain special escape sequences:
 (set-face-background 'mode-line "#c0bf8d")
 (set-face-attribute 'mode-line nil :height 120)
 
+(set-face-attribute 'header-line nil :height 240)
+
 ;;}}}
 
 ;;{{{ `-- Server
@@ -1106,6 +1132,17 @@ If prefix ARG is specified - create public gist."
   (setq auto-mode-alist
         (append '(("\\.euk$" . eukleides-mode)) auto-mode-alist))
   :hook  (eukleides-mode-hook . eldoc-mode)
+  )
+
+(use-package totp-auth
+  :load-path "~/github/totp.el"
+  :init
+  (setq totp-display-token-method
+        (lambda (secret label)
+          (let ((otp (totp-generate-otp secret)))
+            ;; Copy to clipboard
+            (funcall interprogram-cut-function (nth 0 otp))
+            (message "TOTP: %s -> %s" label (nth 0 otp)))))
   )
 
 
@@ -1277,6 +1314,7 @@ M-{ causes next skeleton insertation.
 ;;{{{ `-- Which Func Mode
 (setq which-func-modes
       '(emacs-lisp-mode c-mode c++-mode objc-mode python-mode
+                        python-ts-mode
          	        makefile-mode sh-mode diff-mode)
       )
 (which-function-mode 1)
@@ -1343,6 +1381,9 @@ M-{ causes next skeleton insertation.
 (defun lg-emacs-lisp-mode-customize ()
   (company-mode 1)
   (local-set-key (kbd "C-c c c") 'byte-compile-file)
+
+  ;; To ident a sexp at point using lg-mark-sexp package
+  (local-set-key (kbd "C-c C-M-\\") (kbd "C-u C-u C-u C-M-h C-M-\\"))
   )
 
 (add-hook 'emacs-lisp-mode-hook 'lg-emacs-lisp-mode-customize)
@@ -1387,11 +1428,19 @@ If prefix ARG is specified, then replace region with the evaluation result."
         (setq sexp (read (current-buffer))))
       (pp-macroexpand-expression sexp))))
 
+(defun lg-check-parens ()
+  (interactive)
+  (check-parens)
+  (message "Parens are OK"))
+
 ;; NOTE: Installs C-ce Prefix for elisp operations (for lisp-mode only)
 (define-key emacs-lisp-mode-map (kbd "C-c e b") 'lg-emacs-eval-buffer)
 (define-key emacs-lisp-mode-map (kbd "C-c e r") 'lg-emacs-eval-region)
 (define-key emacs-lisp-mode-map (kbd "C-c e f") 'eval-defun)
 (define-key emacs-lisp-mode-map (kbd "C-c e s") 'eval-last-sexp)
+(define-key emacs-lisp-mode-map (kbd "C-c e (") 'lg-check-parens)
+(define-key emacs-lisp-mode-map (kbd "C-c e )") 'lg-check-parens)
+(define-key emacs-lisp-mode-map (kbd "C-c e p") 'lg-check-parens)
 ;; NOTE: There is also `emacs-lisp-macroexpand'
 (define-key emacs-lisp-mode-map (kbd "C-c e e") 'lg-macroexpand-sexp)
 (define-key emacs-lisp-mode-map (kbd "C-c e m") 'lg-macroexpand-sexp)
@@ -1419,6 +1468,7 @@ If prefix ARG is specified, then replace region with the evaluation result."
 (defun lg-py-shell ()
   "Switch to python interpreter."
   (interactive)
+  (require 'python)
   (unless (python-shell-get-process)
     (run-python))
   (pop-to-buffer
@@ -1454,6 +1504,21 @@ If prefix ARG is given then insert result into the current buffer."
         (insert res)
       (message "Result: [%s] = %s" pyexpr res))))
 (global-set-key (kbd "M-#") 'lg-python-mini-calc)
+
+;; numi-cli based calculator
+(defvar numi-cli-bin "numi-cli")
+
+(defun lg-numi-cli-mini-calc (expr &optional arg)
+  "Eval EXPR using numi-cli utility.
+If ARG is given then insert results into current buffer."
+  (interactive "sNumi: \nP")
+  (let ((res (string-trim-right
+              (shell-command-to-string (format "%s %S" numi-cli-bin expr))
+              "[\n\r]+")))
+    (if arg
+        (insert res)
+      (message "Numi: [%s] = %s" expr res))))
+(global-set-key (kbd "M-#") 'lg-numi-cli-mini-calc)
 
 ;;; python venv for LSP
 ;; python -m venv
@@ -1677,9 +1742,12 @@ If prefix ARG is given then insert result into the current buffer."
 ;; See https://github.com/jorgenschaefer/elpy/issues/1381
 (setq elpy-eldoc-show-current-function nil)
 
-(elpy-enable)
+;(elpy-enable)
 
 (defun lg-py-install-keys ()
+  (setq-local devdocs-current-docs '("python~3.11"))
+  (setq-local comment-padding "  ")     ; E261 at least two spaces needed
+
   (local-set-key (kbd "C-c e r") 'py-execute-region)
   (local-set-key (kbd "C-c e b") 'py-execute-buffer)
   (local-set-key (kbd "C-c e f") 'py-execute-def-or-class)
@@ -1691,7 +1759,7 @@ If prefix ARG is given then insert result into the current buffer."
 (add-hook 'python-mode-hook 'lg-py-install-keys)
 
 ;;; Cython mode
-(require 'cython-mode)
+;(require 'cython-mode)
 
 ;; For scons
 (add-to-list 'auto-mode-alist '("SConstruct" . python-mode))
@@ -1966,9 +2034,9 @@ auto-insert-alist)
 (setq gnus-article-decode-mime-words t)
 (setq gnus-article-decode-charset 1)
 
-                                        ;(require 'gnus-demon)
 ;; periodically check for new mail
-(gnus-demon-add-handler 'gnus-group-get-new-news 3 nil)
+;(require 'gnus-demon)
+;(gnus-demon-add-handler 'gnus-group-get-new-news 3 nil)
 ;(gnus-demon-init)
 
 ;;; New mail notifier
@@ -2482,7 +2550,7 @@ auto-insert-alist)
 
 ;; Restoring frames does not work under EXWM
 (setq desktop-restore-frames nil)
-(setq desktop-restore-eager 5)          ; load fils lazily
+(setq desktop-restore-eager 15)         ; load files lazily
 
 (push 'dired-mode desktop-modes-not-to-save)
 (push 'multran-mode desktop-modes-not-to-save)
@@ -2494,14 +2562,14 @@ auto-insert-alist)
       "\\(^nn\\.a[0-9]+\\|\\.log\\|(ftp)\\|^tags\\|^TAGS\\|^worklog\\)$")
 
 (setq desktop-files-not-to-save
-      (concat desktop-files-not-to-save "\\|\\.gz$\\|/rt/\\|/rt-dev/"))
+      "\\(\\`/[^/:]*:\\|(ftp)\\'\\)\\|\\.gz$\\|/rt-dev/")
 
 ;; Do not save files opened from telega
 (defun lg-desktop-non-telega-file-p (filename bufname mode &rest rest)
   "Return non-nil if file is not a telega buffer."
-  (when (fboundp 'telega-buffer-p)      ;checks telega is loaded
-    (with-current-buffer bufname
-      (not (or (telega-buffer-p)
+  (not (when (fboundp 'telega-buffer-p)      ;checks telega is loaded
+         (with-current-buffer bufname
+           (or (telega-buffer-p)
                telega-edit-file-mode
                (eq major-mode 'telega-image-mode)
                telega--help-win-param)))))
@@ -2545,17 +2613,23 @@ auto-insert-alist)
 
 (setq telega-language "ru")
 (setq telega-use-docker nil)
-(setq telega-debug 'docker)
+(setq telega-debug '(info docker))
 
 (setq telega-patrons-disable-sponsored-messages nil)
 (setq telega-use-images t)
 
 ;; Open .webm files in external viewer
+(add-to-list 'org-file-apps '("\\.pdf\\'" . "evince %s"))
 (add-to-list 'org-file-apps '("\\.webm\\'" . "mpv %s"))
+(add-to-list 'org-file-apps '("\\.log\\'" . emacs))
+(add-to-list 'org-file-apps '("\\.mpd\\'" . emacs))
 (setcdr (assq t org-file-apps-gnu) 'browse-url-xdg-open)
 
 (setcdr (assq 'file org-link-frame-setup) 'find-file)
 (setq telega-open-file-function 'org-open-file)
+
+(defun lg-telega-watch-in-mpv (url)
+  (async-shell-command (format "mpv -v %S" url)))
 
 ;; c-mode for autogenerated .tl files
 (add-to-list 'auto-mode-alist '("\\.tl\\'" . c-mode))
@@ -2566,12 +2640,17 @@ auto-insert-alist)
 (setq telega-filter-custom-expand t)
 (setq telega-use-tracking-for '(or unmuted mention))
 
+(setq telega-symbol-sender-and-text-delim "›")
+;; For better `string-width' and formatting
+(setq telega-symbol-forward "FF")
+(setq telega-symbol-reply "RR")
+
 ;; (setq telega-animation-play-inline t)
 ;; (setq telega-video-note-play-inline t)
 ;; (setq telega-video-play-inline t)
 
 (setq telega-root-fill-column 80)
-(setq telega-chat-fill-column 70)
+(setq telega-chat-fill-column 80)
 
 (setq telega-chat-show-deleted-messages-for '(not saved-messages))
 
@@ -2602,13 +2681,6 @@ auto-insert-alist)
                 #'equal))))
 
 (defun lg-telega-chat-mode ()
-  (set (make-local-variable 'company-backends)
-       (append (list telega-emoji-company-backend
-                     'telega-company-username
-                     'telega-company-hashtag
-                     'telega-company-markdown-precode)
-               (when (telega-chat-bot-p telega-chatbuf--chat)
-                 '(telega-company-botcmd))))
   (company-mode 1)
 
   ;; (make-face 'my-telega-face)
@@ -2617,12 +2689,14 @@ auto-insert-alist)
   ;; (buffer-face-mode)
 
   ;; Translations
+  (setq telega-translate-to-language-by-default "en")
   (setq telega-translate-replace-content nil)
   (when (telega-chatbuf-match-p '(has-username "TGgeek"))
     ;; Channels don't need `telega-chatbuf-language-code' because you
     ;; can't post
     (telega-auto-translate-mode 1))
-  (when (telega-chatbuf-match-p '(has-username "emacs_china"))
+  (when (telega-chatbuf-match-p '(or (has-username "emacs_china")
+                                     (has-username "freemdict")))
     (setq telega-chatbuf-language-code "zh")
     (telega-auto-translate-mode 1))
   )
@@ -2638,20 +2712,27 @@ auto-insert-alist)
       (cl-assert (telega-msg-match-p  msg '(type Document)))
       (telega-msg-open-document msg))))
 
+(defvar lg-on-vacation-p nil
+  "Set to non-nil on vacation.")
+
 (defun lg-telega-work-time-p ()
   "Return non-nil if currently is working hours."
   (let ((dtime (decode-time)))
     ;; Mon-Fri from 11:00 to 19:00
-    (and (memq (decoded-time-weekday dtime) '(1 2 3 4 5))
+    (and (not lg-on-vacation-p)
+         (memq (decoded-time-weekday dtime) '(1 2 3 4 5))
          (memq (decoded-time-hour dtime) '(11 12 13 14 15 16 17 18)))))
 
 (defun lg-telega-load ()
+  (add-to-list 'telega-browse-url-alist
+               '("^https?://.*\\.webm$" . lg-telega-watch-in-mpv))
+
   (require 'telega-dashboard)
   (add-to-list 'dashboard-items '(telega-chats . 5))
 
-  (require 'telega-stories)
-  (telega-stories-mode 1)
-  (add-to-list 'dashboard-items '(telega-stories . 5))
+  (require 'telega-emacs-stories)
+  (telega-emacs-stories-mode 1)
+  (add-to-list 'dashboard-items '(telega-emacs-stories . 5))
   (define-key telega-root-mode-map (kbd "v e") 'telega-view-emacs-stories)
 
   (require 'telega-url-shorten)
@@ -2689,6 +2770,8 @@ auto-insert-alist)
 ;    (telega-symbol-set-width telega-symbol-eliding 2)
     )
 
+  (set-face-foreground 'telega-msg-inline-reply "grey50")
+
   ;; Notifications by keyword or work chats at working hours
   (setq telega-notifications-msg-temex
         '(and (not outgoing)
@@ -2696,6 +2779,7 @@ auto-insert-alist)
                              (name "шахматы"))))
               (or (type VideoChatStarted)
                   (contains "telega\\|[тТ]елег[^р]")
+                  (sender (ids 406157774)) ;Танюшка
                   (and (chat (folder "work"))
                        (eval (lg-telega-work-time-p))))))
   (telega-notifications-mode 1)
@@ -2818,6 +2902,13 @@ auto-insert-alist)
     (funcall origfunc url in-web-browser)))
 
 (advice-add 'telega-browse-url :around 'lg-maybe-asciinema-view)
+
+;; Disable highlighting text on `M-g r'
+(defun lg-disable-highlight-text ()
+  (telega-highlight-text-mode -1)
+  (telega-chatbuf--chat-update "highlight-text"))
+
+(advice-add 'telega-chatbuf-read-all :after 'lg-disable-highlight-text)
 
 ;; Char-mode for vterm
 
@@ -2953,6 +3044,10 @@ Or run `call-last-kbd-macro' otherwise."
 ;; Accept fancy colored prompts
 (setq tramp-shell-prompt-pattern
       "\\(?:^\\|\r\\)[^]#$%>\n]*#?[]#$%>].* *\\(^[\\[[0-9;]*[a-zA-Z] *\\)*")
+
+;; Ommits some queries to user
+(setq tramp-allow-unsafe-temporary-files t)
+
 ;;;}}}
 
 ;; favorite unicode chars
@@ -3016,14 +3111,14 @@ Or run `call-last-kbd-macro' otherwise."
 ;;   (global-yascroll-bar-mode 1)
 ;;   )
 
-(use-package mlscroll
-  :ensure t
-  :config
-  (setq mlscroll-in-color "gray70")
-  (setq mlscroll-out-color "gray85")
-  (setq mlscroll-minimum-current-width 4)
-  (setq mlscroll-border 2)
-  (mlscroll-mode 1))
+;; (use-package mlscroll
+;;   :ensure t
+;;   :config
+;;   (setq mlscroll-in-color "gray70")
+;;   (setq mlscroll-out-color "gray85")
+;;   (setq mlscroll-minimum-current-width 4)
+;;   (setq mlscroll-border 2)
+;;   (mlscroll-mode 1))
 
 (use-package sudo-edit
   :config (sudo-edit-indicator-mode)
@@ -3086,3 +3181,52 @@ Or run `call-last-kbd-macro' otherwise."
   (reverse-im-input-methods '("cyrillic-dvorak"))
   :config
   (reverse-im-mode t))
+
+;; Emacs 30 with tree-sitter support
+;; 
+;; To install new languages use:
+;;   (mapc #'treesit-install-language-grammar
+;;         (mapcar #'car treesit-language-source-alist))
+(use-package treesit
+  :init
+  (setq treesit-language-source-alist
+        '((bash "https://github.com/tree-sitter/tree-sitter-bash")
+          (c "https://github.com/tree-sitter/tree-sitter-c")
+          (cmake "https://github.com/uyha/tree-sitter-cmake")
+          (cpp "https://github.com/tree-sitter/tree-sitter-cpp")
+          (css "https://github.com/tree-sitter/tree-sitter-css")
+          (elisp "https://github.com/Wilfred/tree-sitter-elisp")
+          (go "https://github.com/tree-sitter/tree-sitter-go")
+          (html "https://github.com/tree-sitter/tree-sitter-html")
+          (javascript "https://github.com/tree-sitter/tree-sitter-javascript" "master" "src")
+          (json "https://github.com/tree-sitter/tree-sitter-json")
+          (make "https://github.com/alemuller/tree-sitter-make")
+          (markdown "https://github.com/ikatyang/tree-sitter-markdown")
+          (python "https://github.com/tree-sitter/tree-sitter-python")
+          (rust "https://github.com/tree-sitter/tree-sitter-rust")
+          (toml "https://github.com/tree-sitter/tree-sitter-toml")
+          (tsx "https://github.com/tree-sitter/tree-sitter-typescript" "master" "tsx/src")
+          (typescript "https://github.com/tree-sitter/tree-sitter-typescript" "master" "typescript/src")
+          (yaml "https://github.com/ikatyang/tree-sitter-yaml")))
+  (setq major-mode-remap-alist
+        '((c-mode . c-ts-mode)
+          (yaml-mode . yaml-ts-mode)
+          (bash-mode . bash-ts-mode)
+          (js2-mode . js-ts-mode)
+          (typescript-mode . typescript-ts-mode)
+          (json-mode . json-ts-mode)
+          (css-mode . css-ts-mode)
+          (python-mode . python-ts-mode)))
+
+  ;; NOTE: elpy only works in `python-mode' not `python-ts-mode-hook'
+  (add-hook 'python-ts-mode-hook 'lg-py-install-keys)
+
+  (setq c-ts-mode-hook c-mode-hook)
+  )
+
+(use-package eglot
+  :ensure t
+  :defer t
+  ;; :hook ((python-ts-mode . eglot-ensure)
+  ;;        (python-mode . eglot-ensure))
+  )
